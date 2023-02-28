@@ -31,7 +31,7 @@ jobs:
           
       - name: test cel
         run: 
-          pushd abscab && bazel test //abscab-c/abscab:TestCel --test_output=all ; popd
+          pushd abscab && bazel test //abscab-c/cel:TestCel --test_output=all ; popd
           
       - name: test abscab
         run: 
