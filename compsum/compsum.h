@@ -3,6 +3,9 @@
 
 #include <math.h>
 
+namespace abscab_c {
+namespace compsum {
+
 /**
  * Add a single contribution to the sum.
  * The compensated sum is obtained by summing the final values of s, cs and ccs
@@ -12,5 +15,8 @@
  * @param compSum[3]: {s, cs, ccs}: target for output
  */
 void compAdd(double contribution, double *compSum);
+
+} // namespace compsum
+} // namespace abscab_c
 
 #endif // COMPSUM_H

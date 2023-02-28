@@ -1,6 +1,9 @@
 
 #include "abscab-c/abscab/abscab.h"
 
+namespace abscab_c {
+namespace abscab {
+
 /////// A_z of straight wire segment
 
 /**
@@ -224,7 +227,7 @@ double cwl_A_phi_f(double rhoP, double zP) {
 	double kCp1 = 1 + kC;
 	double arg1 = 2 * sqrt(kC) / kCp1;
 	double arg2 = 2 / (kCp1 * kCp1 * kCp1);
-	double C = cel(arg1, 1, 0, arg2);
+	double C = cel::cel(arg1, 1, 0, arg2);
 
 	return kSq/sqrt_kCSqDen * C;
 }
@@ -250,7 +253,7 @@ double cwl_A_phi_n(double rhoP, double zP) {
 	double kCSq = num / den;
 
 	double prefac = 1 / (fabs(rhoP - 1) * sqrt(den));
-	double celPart = cel(sqrt(kCSq), 1, -1, 1);
+	double celPart = cel::cel(sqrt(kCSq), 1, -1, 1);
 	return prefac * celPart;
 }
 
@@ -267,7 +270,7 @@ double cwl_A_phi_v(double zP) {
 	// 1/k_c
 	double kCInv = sqrt(4 + zP * zP) / absZp;
 
-	return cel(kCInv, 1, 1, -1) / absZp;
+	return cel::cel(kCInv, 1, 1, -1) / absZp;
 }
 
 //////// B_rho of circular wire loop
@@ -291,12 +294,12 @@ double cwl_B_rho_f(double rhoP, double zP) {
 	double kCSq = kCSqNum / kCSqDen;
 	double kC = sqrt(kCSq);
 
-	double D = cel(kC, 1, 0, 1);
+	double D = cel::cel(kC, 1, 0, 1);
 
 	double kCp1 = 1 + kC;
 	double arg1 = 2 * sqrt(kC) / kCp1;
 	double arg2 = 2 / (kCp1 * kCp1 * kCp1);
-	double C = cel(arg1, 1, 0, arg2);
+	double C = cel::cel(arg1, 1, 0, arg2);
 
 	double prefac = 4 * rhoP / (kCSqDen * sqrt_kCSqDen * kCSqNum);
 
@@ -327,12 +330,12 @@ double cwl_B_rho_n(double rhoP, double zP) {
 
 	double kC = sqrt_kCSqNum / sqrt_kCSqDen;
 
-	double D = cel(kC, 1, 0, 1);
+	double D = cel::cel(kC, 1, 0, 1);
 
 	double kCp1 = 1 + kC;
 	double arg1 = 2 * sqrt(kC) / kCp1;
 	double arg2 = 2 / (kCp1 * kCp1 * kCp1);
-	double C = arg2 * cel(arg1, 1, 0, 1);
+	double C = arg2 * cel::cel(arg1, 1, 0, 1);
 
 	// z' / |rho' - 1|^5
 	double zP_rd5 = zP / (fabs(rhoP_m_1) * rd2 * rd2);
@@ -355,8 +358,8 @@ double cwl_B_rho_v(double zP) {
 	double kCSq = 1 / (1 + 4 / zPSq);
 	double kC = sqrt(kCSq);
 
-	double K = cel(kC, 1, 1, 1);
-	double E = cel(kC, 1, 1, kCSq);
+	double K = cel::cel(kC, 1, 1, 1);
+	double E = cel::cel(kC, 1, 1, kCSq);
 
 	return copysign(kC / 2 * ((2 / zPSq + 1) * E - K), zP);
 }
@@ -378,9 +381,9 @@ double cwl_B_z_f1(double rhoP, double zP) {
 
 	double kC = sqrt_kCSqNum / sqrt_kCSqDen;
 
-	double K = cel(kC, 1, 1, 1);
-	double E = cel(kC, 1, 1, kC * kC);
-	double D = cel(kC, 1, 0, 1);
+	double K = cel::cel(kC, 1, 1, 1);
+	double E = cel::cel(kC, 1, 1, kC * kC);
+	double D = cel::cel(kC, 1, 0, 1);
 
 	double prefac = 1 / (sqrt_kCSqDen * sqrt_kCSqNum * sqrt_kCSqNum);
 	double comb = (E - 2 * K + 2 * D);
@@ -423,13 +426,13 @@ double cwl_B_z_f2(double rhoP, double zP) {
 
 	double cdScale = 1 + (2 + zPSqP1 / rhoP) / rhoP;
 
-	double E = cel(kC, 1, 1, kCSq);
-	double D = cel(kC, 1, 0, 1);
+	double E = cel::cel(kC, 1, 1, kCSq);
+	double D = cel::cel(kC, 1, 0, 1);
 
 	double kCP1 = 1 + kC;
 	double arg1 = 2 * sqrt(kC) / kCP1;
 	double arg2 = 2 / (kCP1 * kCP1 * kCP1);
-	double C = arg2 * cel(arg1, 1, 0, 1);
+	double C = arg2 * cel::cel(arg1, 1, 0, 1);
 
 	// use C - D for (2 * D - E)/kSq
 	return prefac * (E + 4 * (C - D) / cdScale);
@@ -459,7 +462,7 @@ double cwl_B_z_n(double rhoP, double zP) {
 
 	double prefac = 1 / (fabs(rp1) * rp1 * rp1 * kCSqDen * sqrt_kCSqDen);
 
-	return prefac * cel(kC, kC * kC, 1 + rhoP, 1 - rhoP);
+	return prefac * cel::cel(kC, kC * kC, 1 + rhoP, 1 - rhoP);
 }
 
 /**
@@ -476,7 +479,7 @@ double cwl_B_z_v(double zP) {
 	double f = zP * zP + 4;
 	double prefac = 1 / (f * sqrt(f));
 
-	return prefac * cel(kC, kCSq, 2, 0);
+	return prefac * cel::cel(kC, kCSq, 2, 0);
 }
 
 // --------------------------------------------------
@@ -930,9 +933,9 @@ void kernelVectorPotentialPolygonFilament(
 
 			// add contribution from wire segment to result
 			if (useCompensatedSummation) {
-				compAdd(aParallel * eX, aXSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eY, aYSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eZ, aZSum + 3 * (idxEval - idxEvalStart));
+				compsum::compAdd(aParallel * eX, aXSum + 3 * (idxEval - idxEvalStart));
+				compsum::compAdd(aParallel * eY, aYSum + 3 * (idxEval - idxEvalStart));
+				compsum::compAdd(aParallel * eZ, aZSum + 3 * (idxEval - idxEvalStart));
 			} else {
 				vectorPotential[3 * idxEval + 0] += aParallel * eX;
 				vectorPotential[3 * idxEval + 1] += aParallel * eY;
@@ -1082,9 +1085,9 @@ void kernelVectorPotentialPolygonFilamentVertexSupplier(
 
 			// add contribution from wire segment to result
 			if (useCompensatedSummation) {
-				compAdd(aParallel * eX, aXSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eY, aYSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eZ, aZSum + 3 * (idxEval - idxEvalStart));
+				compsum::compAdd(aParallel * eX, aXSum + 3 * (idxEval - idxEvalStart));
+				compsum::compAdd(aParallel * eY, aYSum + 3 * (idxEval - idxEvalStart));
+				compsum::compAdd(aParallel * eZ, aZSum + 3 * (idxEval - idxEvalStart));
 			} else {
 				vectorPotential[3 * idxEval + 0] += aParallel * eX;
 				vectorPotential[3 * idxEval + 1] += aParallel * eY;
@@ -1252,9 +1255,9 @@ void kernelMagneticFieldPolygonFilament(
 
 				// add contribution from wire segment to result
 				if (useCompensatedSummation) {
-					compAdd(bPhi * ePhiX, bXSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiY, bYSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiZ, bZSum + 3 * (idxEval - idxEvalStart));
+					compsum::compAdd(bPhi * ePhiX, bXSum + 3 * (idxEval - idxEvalStart));
+					compsum::compAdd(bPhi * ePhiY, bYSum + 3 * (idxEval - idxEvalStart));
+					compsum::compAdd(bPhi * ePhiZ, bZSum + 3 * (idxEval - idxEvalStart));
 				} else {
 					magneticField[3 * idxEval + 0] += bPhi * ePhiX;
 					magneticField[3 * idxEval + 1] += bPhi * ePhiY;
@@ -1425,9 +1428,9 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
 
 				// add contribution from wire segment to result
 				if (useCompensatedSummation) {
-					compAdd(bPhi * ePhiX, bXSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiY, bYSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiZ, bZSum + 3 * (idxEval - idxEvalStart));
+					compsum::compAdd(bPhi * ePhiX, bXSum + 3 * (idxEval - idxEvalStart));
+					compsum::compAdd(bPhi * ePhiY, bYSum + 3 * (idxEval - idxEvalStart));
+					compsum::compAdd(bPhi * ePhiZ, bZSum + 3 * (idxEval - idxEvalStart));
 				} else {
 					magneticField[3 * idxEval + 0] += bPhi * ePhiX;
 					magneticField[3 * idxEval + 1] += bPhi * ePhiY;
@@ -1570,9 +1573,9 @@ void vectorPotentialPolygonFilament_specPar_specSum(
 					memset(sumZ, 0, 3 * sizeof(*sumZ));
 					// TODO: bad memory access pattern here --> potential bottleneck !!!
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						compsum::compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
+						compsum::compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
+						compsum::compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
 					}
 					vectorPotential[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
 					vectorPotential[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
@@ -1736,9 +1739,9 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
 					memset(sumZ, 0, 3 * sizeof(*sumZ));
 					// TODO: bad memory access pattern here --> potential bottleneck !!!
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						compsum::compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
+						compsum::compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
+						compsum::compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
 					}
 					vectorPotential[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
 					vectorPotential[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
@@ -1902,9 +1905,9 @@ void magneticFieldPolygonFilament_specPar_specSum(
 					memset(sumZ, 0, 3 * sizeof(*sumZ));
 					// TODO: bad memory access pattern here --> potential bottleneck !!!
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						compsum::compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
+						compsum::compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
+						compsum::compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
 					}
 					magneticField[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
 					magneticField[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
@@ -2069,9 +2072,9 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
 					memset(sumZ, 0, 3 * sizeof(*sumZ));
 					// TODO: bad memory access pattern here --> potential bottleneck !!!
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						compsum::compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
+						compsum::compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
+						compsum::compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
 					}
 					magneticField[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
 					magneticField[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
@@ -2362,3 +2365,6 @@ void magneticFieldPolygonFilamentVertexSupplier(
 			magneticField,
 			numProcessors);
 }
+
+} // namespace abscab
+} // namespace abscab_c

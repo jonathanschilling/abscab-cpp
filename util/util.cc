@@ -1,6 +1,9 @@
 
 #include "abscab-c/util/util.h"
 
+namespace abscab_c {
+namespace util {
+
 /**
  * Check if two values are approximately equal within a prescribed tolerance.
  * For values much smaller than 1, this is similar to a comparison of the
@@ -203,3 +206,7 @@ void dumpToFile(int numCols, int numRows, double *data, char *filename) {
 		printf("failed to close file '%s': status = %d\n", filename, status);
 	}
 }
+
+} // namespace util
+} // namespace abscab_c
+

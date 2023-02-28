@@ -5,6 +5,9 @@
 
 #include "abscab-c/cel/cel.h"
 
+namespace abscab_c {
+namespace cel {
+
 /** test case for cel() implementation as described in section 4.2 of the 1969 Bulirsch article */
 TEST(TestCel, CheckCel) {
 	double tolerance = 1.0e-15;
@@ -26,6 +29,9 @@ TEST(TestCel, CheckCel) {
 //	printf("case 1: rel/abs deviation = %g\n", ra1);
 //	printf("case 2: rel/abs deviation = %g\n", ra2);
 
-	EXPECT_EQ(assertRelAbsEquals(cel1, c1, tolerance), 0);
-	EXPECT_EQ(assertRelAbsEquals(cel2, c2, tolerance), 0);
+	EXPECT_EQ(util::assertRelAbsEquals(cel1, c1, tolerance), 0);
+	EXPECT_EQ(util::assertRelAbsEquals(cel2, c2, tolerance), 0);
 }
+
+} // namespace cel
+} // namespace abscab_c

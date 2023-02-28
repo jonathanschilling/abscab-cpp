@@ -8,6 +8,9 @@
 #include <math.h>
 #include <string.h>
 
+namespace abscab_c {
+namespace util {
+
 /**
  * Check if two values are approximately equal within a prescribed tolerance.
  * For values much smaller than 1, this is similar to a comparison of the
@@ -48,5 +51,8 @@ char* trim_whitespace(char *str);
 double** loadColumnsFromFile(const char *filename, int *numRows, int *numColumns);
 
 void dumpToFile(int numCols, int numRows, double *data, char *filename);
+
+} // namespace util
+} // namespace abscab_c
 
 #endif // UTIL_H

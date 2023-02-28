@@ -1,6 +1,9 @@
 
 #include "abscab-c/cel/cel.h"
 
+namespace abscab_c {
+namespace cel {
+
 /**
  * Compute the complete elliptic integral introduced in
  * "Numerical Calculation of Elliptic Integrals and Elliptic Functions. III"
@@ -75,3 +78,6 @@ double cel(double k_c, double p, double a, double b) {
 	// \pi/2 * (a * \mu + b)/(\mu * (\mu + p))
 	return PI_2 * (a*m+b) / (m*(m+p));
 }
+
+} // namespace cel
+} // namespace abscab_c

@@ -15,7 +15,8 @@
 #include "abscab-c/cel/cel.h"
 #include "abscab-c/compsum/compsum.h"
 
-#define min(x,y) ((x) < (y) ? (x) : (y))
+namespace abscab_c {
+namespace abscab {
 
 /** vacuum magnetic permeability in Vs/Am (CODATA-2018) */
 const double MU_0 = 1.25663706212e-6;
@@ -28,6 +29,14 @@ const double MU_0_BY_2_PI = MU_0 / (2.0 * M_PI);
 
 /** vacuum magnetic permeability, divided by 4 pi */
 const double MU_0_BY_4_PI = MU_0 / (4.0 * M_PI);
+
+int min(int x, int y) {
+	if (x < y) {
+		return x;
+	} else {
+		return y;
+	}
+}
 
 /////// A_z of straight wire segment
 
@@ -709,5 +718,8 @@ void magneticFieldPolygonFilamentVertexSupplier(
 		int numEvalPos,
 		double *evalPos,
 		double *magneticField);
+
+} // namespace abscab
+} // namespace abscab_c
 
 #endif // ABSCAB_H
