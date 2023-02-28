@@ -1,7 +1,5 @@
-#ifndef COMPSUM_H
-#define COMPSUM_H
 
-#include <math.h>
+#include "abscab-c/compsum/compsum.h"
 
 /**
  * Add a single contribution to the sum.
@@ -34,5 +32,3 @@ void compAdd(double contribution, double *compSum) {
 	compSum[1] = t2;
 	compSum[2] += cc;
 }
-
-#endif // COMPSUM_H

@@ -1,20 +1,5 @@
-#ifndef CEL_H
-#define CEL_H
 
-#include <float.h>
-#include <limits.h>
-#include <math.h>
-
-// C99 does not define M_PI
-#ifndef M_PI
-#define M_PI (3.14159265358979323846)
-#endif
-
-/** half of pi */
-const double PI_2 = M_PI / 2.0;
-
-/** sqrt of machine epsilon */
-const double SQRT_EPS = sqrt(DBL_EPSILON);
+#include "abscab-c/cel/cel.h"
 
 /**
  * Compute the complete elliptic integral introduced in
@@ -90,5 +75,3 @@ double cel(double k_c, double p, double a, double b) {
 	// \pi/2 * (a * \mu + b)/(\mu * (\mu + p))
 	return PI_2 * (a*m+b) / (m*(m+p));
 }
-
-#endif // CEL_H

@@ -1,12 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
+#include "abscab-c/util/util.h"
 
 /**
  * Check if two values are approximately equal within a prescribed tolerance.
@@ -91,7 +84,7 @@ char* trim_whitespace(char *str) {
  * where one entry corresponds to one column of the data in the file.
  * Rows in the file starting with "#" are not counted and not parsed.
  */
-double** loadColumnsFromFile(char *filename, int *numRows, int *numColumns) {
+double** loadColumnsFromFile(const char *filename, int *numRows, int *numColumns) {
 
 	// try to open given file
 	FILE *fp = fopen(filename, "r");
@@ -109,7 +102,7 @@ double** loadColumnsFromFile(char *filename, int *numRows, int *numColumns) {
 
 	int rows = 0;
 	int cols = 0;
-	char *delims = " \t";
+	const char *delims = " \t";
 
 	// first pass: read file and count lines and columns
 	while (fgets(line, bufSize, fp) != NULL) {
@@ -210,5 +203,3 @@ void dumpToFile(int numCols, int numRows, double *data, char *filename) {
 		printf("failed to close file '%s': status = %d\n", filename, status);
 	}
 }
-
-#endif // UTIL_H

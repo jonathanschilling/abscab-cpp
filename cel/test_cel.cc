@@ -1,9 +1,12 @@
-#include "util.h"
 
-#include "cel.h"
+#include <gtest/gtest.h>
+
+#include "abscab-c/util/util.h"
+
+#include "abscab-c/cel/cel.h"
 
 /** test case for cel() implementation as described in section 4.2 of the 1969 Bulirsch article */
-int test_cel() {
+TEST(TestCel, CheckCel) {
 	double tolerance = 1.0e-15;
 
 	double k_c = 0.1;
@@ -23,21 +26,6 @@ int test_cel() {
 //	printf("case 1: rel/abs deviation = %g\n", ra1);
 //	printf("case 2: rel/abs deviation = %g\n", ra2);
 
-	int status = 0;
-	status |= assertRelAbsEquals(cel1, c1, tolerance);
-	status |= assertRelAbsEquals(cel2, c2, tolerance);
-	return status;
-}
-
-int main(int argc, char **argv) {
-
-	int status = 0;
-
-	status |= test_cel();
-
-	if (status != 0) {
-		printf("%s: some test(s) failed :-(\n", argv[0]);
-	} else {
-		printf("%s: all test(s) passed :-)\n", argv[0]);
-	}
+	EXPECT_EQ(assertRelAbsEquals(cel1, c1, tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(cel2, c2, tolerance), 0);
 }
