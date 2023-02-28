@@ -7,13 +7,32 @@ jobs:
     steps:
       - name: checkout sources
         uses: actions/checkout@master
-      - name: build
+        with:
+          path: abscab/abscab-c
+          
+      - name: fake workspace
+        run: cp abscab/abscab-c/.github/_WORKSPACE_TEMPLATE abscab/WORKSPACE
+          
+      - name: build util
         run: 
-          bazel build //abscab-c/util:util
-          bazel build //abscab-c/cel:cel
-          bazel build //abscab-c/compsum:compsum
-          bazel build //abscab-c/abscab:abscab
-      - name: run tests
+          pushd abscab && bazel build //abscab-c/util:util ; popd
+          
+      - name: build cel
         run: 
-          bazel test //abscab-c/abscab:TestCel --test_output=all
-          bazel test //abscab-c/abscab:TestAbscab --test_output=all
+          pushd abscab && bazel build //abscab-c/cel:cel ; popd
+          
+      - name: build compsum
+        run: 
+          pushd abscab && bazel build //abscab-c/compsum:compsum ; popd
+          
+      - name: build abscab
+        run: 
+          pushd abscab && bazel build //abscab-c/abscab:abscab ; popd
+          
+      - name: test cel
+        run: 
+          pushd abscab && bazel test //abscab-c/abscab:TestCel --test_output=all ; popd
+          
+      - name: test abscab
+        run: 
+          pushd abscab && bazel test //abscab-c/abscab:TestAbscab --test_output=all ; popd
