@@ -24,7 +24,8 @@ we kindly ask you to cite [the corresponding article](https://doi.org/10.1016/j.
 }
 ```
 
-This is the Java implementation of [ABSCAB](https://github.com/jonathanschilling/abscab).
+This is the C implementation of [ABSCAB](https://github.com/jonathanschilling/abscab).
+![Build & Test](https://github.com/jonathanschilling/abscab-c/actions/workflows/build.yml/badge.svg)
 
 | description         | link to file |
 | ------------------- | ---------------------------------------------------------------------- |
@@ -32,3 +33,4 @@ This is the Java implementation of [ABSCAB](https://github.com/jonathanschilling
 | unit tests          | [`test_abscab.c`](test/test_abscab.c) |
 | demo code           | [`demo_abscab.c`](test/demo_abscab.c) |
 | parallelized        | :heavy_check_mark: (OpenMP)                                           |
+
