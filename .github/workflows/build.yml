@@ -7,7 +7,13 @@ jobs:
     steps:
       - name: checkout sources
         uses: actions/checkout@master
-      - name: compile
-        run: make
+      - name: build
+        run: 
+          bazel build //abscab-c/util:util
+          bazel build //abscab-c/cel:cel
+          bazel build //abscab-c/compsum:compsum
+          bazel build //abscab-c/abscab:abscab
       - name: run tests
-        run: make test
+        run: 
+          bazel test //abscab-c/abscab:TestCel --test_output=all
+          bazel test //abscab-c/abscab:TestAbscab --test_output=all
