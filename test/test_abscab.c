@@ -9,7 +9,7 @@ int testStraightWireSegment() {
 
 	int rowsRp = 0;
 	int colsRp = 0;
-	double **test_points_rp = loadColumnsFromFile("../resources/testPointsRpStraightWireSegment.dat", &rowsRp, &colsRp);
+	double **test_points_rp = loadColumnsFromFile("test/resources/testPointsRpStraightWireSegment.dat", &rowsRp, &colsRp);
 	if (rowsRp < 1) {
 		printf("error: need at least one row of test point coordinates for rho'\n");
 		return 1;
@@ -21,7 +21,7 @@ int testStraightWireSegment() {
 
 	int rowsZp = 0;
 	int colsZp = 0;
-	double **test_points_zp = loadColumnsFromFile("../resources/testPointsZpStraightWireSegment.dat", &rowsZp, &colsZp);
+	double **test_points_zp = loadColumnsFromFile("test/resources/testPointsZpStraightWireSegment.dat", &rowsZp, &colsZp);
 	if (rowsZp < 1) {
 		printf("error: need at least one row of test point coordinates for z'\n");
 		return 1;
@@ -44,7 +44,7 @@ int testStraightWireSegment() {
 
 	int rowsAZRef = 0;
 	int colsAZRef = 0;
-	double **aZRef = loadColumnsFromFile("../resources/StraightWireSegment_A_z_ref.dat", &rowsAZRef, &colsAZRef);
+	double **aZRef = loadColumnsFromFile("test/resources/StraightWireSegment_A_z_ref.dat", &rowsAZRef, &colsAZRef);
 	if (rowsAZRef < 1) {
 		printf("error: need at least one row of reference values for A_z\n");
 		return 1;
@@ -61,7 +61,7 @@ int testStraightWireSegment() {
 
 	int rowsBPhiRef = 0;
 	int colsBPhiRef = 0;
-	double **bPhiRef = loadColumnsFromFile("../resources/StraightWireSegment_B_phi_ref.dat", &rowsBPhiRef, &colsBPhiRef);
+	double **bPhiRef = loadColumnsFromFile("test/resources/StraightWireSegment_B_phi_ref.dat", &rowsBPhiRef, &colsBPhiRef);
 	if (rowsBPhiRef < 1) {
 		printf("error: need at least one row of reference values for B_phi\n");
 		return 1;
@@ -128,7 +128,7 @@ int testCircularWireLoop() {
 
 	int rowsRp = 0;
 	int colsRp = 0;
-	double **test_points_rp = loadColumnsFromFile("../resources/testPointsRpCircularWireLoop.dat", &rowsRp, &colsRp);
+	double **test_points_rp = loadColumnsFromFile("test/resources/testPointsRpCircularWireLoop.dat", &rowsRp, &colsRp);
 	if (rowsRp < 1) {
 		printf("error: need at least one row of test point coordinates for rho'\n");
 		return 1;
@@ -140,7 +140,7 @@ int testCircularWireLoop() {
 
 	int rowsZp = 0;
 	int colsZp = 0;
-	double **test_points_zp = loadColumnsFromFile("../resources/testPointsZpCircularWireLoop.dat", &rowsZp, &colsZp);
+	double **test_points_zp = loadColumnsFromFile("test/resources/testPointsZpCircularWireLoop.dat", &rowsZp, &colsZp);
 	if (rowsZp < 1) {
 		printf("error: need at least one row of test point coordinates for z'\n");
 		return 1;
@@ -163,7 +163,7 @@ int testCircularWireLoop() {
 
 	int rowsAPhiRef = 0;
 	int colsAPhiRef = 0;
-	double **aPhiRef = loadColumnsFromFile("../resources/CircularWireLoop_A_phi_ref.dat", &rowsAPhiRef, &colsAPhiRef);
+	double **aPhiRef = loadColumnsFromFile("test/resources/CircularWireLoop_A_phi_ref.dat", &rowsAPhiRef, &colsAPhiRef);
 	if (rowsAPhiRef < 1) {
 		printf("error: need at least one row of reference values for A_phi\n");
 		return 1;
@@ -180,7 +180,7 @@ int testCircularWireLoop() {
 
 	int rowsBRhoRef = 0;
 	int colsBRhoRef = 0;
-	double **bRhoRef = loadColumnsFromFile("../resources/CircularWireLoop_B_rho_ref.dat", &rowsBRhoRef, &colsBRhoRef);
+	double **bRhoRef = loadColumnsFromFile("test/resources/CircularWireLoop_B_rho_ref.dat", &rowsBRhoRef, &colsBRhoRef);
 	if (rowsBRhoRef < 1) {
 		printf("error: need at least one row of reference values for B_rho\n");
 		return 1;
@@ -197,7 +197,7 @@ int testCircularWireLoop() {
 
 	int rowsBZRef = 0;
 	int colsBZRef = 0;
-	double **bZRef = loadColumnsFromFile("../resources/CircularWireLoop_B_z_ref.dat", &rowsBZRef, &colsBZRef);
+	double **bZRef = loadColumnsFromFile("test/resources/CircularWireLoop_B_z_ref.dat", &rowsBZRef, &colsBZRef);
 	if (rowsBZRef < 1) {
 		printf("error: need at least one row of reference values for B_z\n");
 		return 1;
@@ -388,4 +388,6 @@ int main(int argc, char **argv) {
 	} else {
 		printf("%s: all test(s) passed :-)\n", argv[0]);
 	}
+
+	return status;
 }
