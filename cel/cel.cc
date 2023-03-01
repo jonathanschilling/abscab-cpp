@@ -49,7 +49,7 @@ double cel(double k_c, double p, double a, double b) {
 		g = 1.0 - p;
 		f -= p;             // kc^2 - p
 		q *= b-a*p;         // (1 - kc^2)*(b-a*p)
-		p = sqrt(f/g); // sqrt((kc^2 - p)/(1-p))              --> p0 done here
+		p = sqrt(f/g);      // sqrt((kc^2 - p)/(1-p))              --> p0 done here
 		a = (a-b)/g;        // (a-b)/(1-p)                         --> a0 done here
 		b = -q/(g*g*p)+a*p; // -(1 - kc^2)*(b-a*p)/( (1-p)^2 * p ) --> b0 done here
 	}
@@ -67,8 +67,8 @@ double cel(double k_c, double p, double a, double b) {
 		if (fabs(g - k_c) > g * SQRT_EPS) { // |\mu_i - \nu_i| > \mu_i*EPS == |1 - \nu_i / \mu_i| > EPS, but more robust!
 			// not converged yet...
 			k_c = sqrt(e); // k_c = sqrt(\nu_i * \mu_i)
-			k_c += k_c;         // \nu_{i+1} <-- 2*sqrt(\nu_i * \mu_i)
-			e = k_c*m; // (\nu * \mu)_{i+1} <-- \nu_{i+1} * mu_{i+1} (also update product explicitly)
+			k_c += k_c;    // \nu_{i+1} <-- 2*sqrt(\nu_i * \mu_i)
+			e = k_c*m;     // (\nu * \mu)_{i+1} <-- \nu_{i+1} * mu_{i+1} (also update product explicitly)
 		} else {
 			break;
 		}
