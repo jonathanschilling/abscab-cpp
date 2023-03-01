@@ -31,7 +31,7 @@ This is the C implementation of [ABSCAB](https://github.com/jonathanschilling/ab
 | description         | link to file |
 | ------------------- | ---------------------------------------------------------------------- |
 | main implementation | [`abscab.h`](abscab/abscab.h)         |
-| unit tests          | [`test_abscab.c`](test/test_abscab.c) |
-| demo code           | [`demo_abscab.c`](test/demo_abscab.c) |
+| unit tests          | [`test_abscab.c`](abscab/test_abscab.c) |
+| demo code           | [`demo_abscab.c`](abscab/demo_abscab.c) |
 | parallelized        | :heavy_check_mark: (OpenMP)                                           |
 
