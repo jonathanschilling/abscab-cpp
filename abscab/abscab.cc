@@ -4,6 +4,14 @@
 namespace abscab_c {
 namespace abscab {
 
+int min(int x, int y) {
+	if (x < y) {
+		return x;
+	} else {
+		return y;
+	}
+}
+
 /////// A_z of straight wire segment
 
 /**
@@ -2274,7 +2282,11 @@ void vectorPotentialPolygonFilament(
 		double *evalPos,
 		double *vectorPotential) {
 
+#ifdef _OPENMP
 	int numProcessors = omp_get_max_threads();
+#else
+	int numProcessors = 1;
+#endif
 	vectorPotentialPolygonFilament_specPar(
 			numVertices, vertices, current,
 			numEvalPos, evalPos,
@@ -2302,7 +2314,11 @@ void vectorPotentialPolygonFilamentVertexSupplier(
 		double *evalPos,
 		double *vectorPotential) {
 
+#ifdef _OPENMP
 	int numProcessors = omp_get_max_threads();
+#else
+	int numProcessors = 1;
+#endif
 	vectorPotentialPolygonFilamentVertexSupplier_specPar(
 			numVertices, vertexSupplier, current,
 			numEvalPos, evalPos,
@@ -2330,7 +2346,11 @@ void magneticFieldPolygonFilament(
 		double *evalPos,
 		double *magneticField) {
 
+#ifdef _OPENMP
 	int numProcessors = omp_get_max_threads();
+#else
+	int numProcessors = 1;
+#endif
 	magneticFieldPolygonFilament_specPar(
 			numVertices, vertices, current,
 			numEvalPos, evalPos,
@@ -2358,7 +2378,11 @@ void magneticFieldPolygonFilamentVertexSupplier(
 		double *evalPos,
 		double *magneticField) {
 
+#ifdef _OPENMP
 	int numProcessors = omp_get_max_threads();
+#else
+	int numProcessors = 1;
+#endif
 	magneticFieldPolygonFilamentVertexSupplier_specPar(
 			numVertices, vertexSupplier, current,
 			numEvalPos, evalPos,
