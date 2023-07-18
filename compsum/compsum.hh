@@ -3,8 +3,7 @@
 
 #include <math.h>
 
-namespace abscab_c {
-namespace compsum {
+namespace abscab {
 
 /**
  * Add a single contribution to the sum.
@@ -16,7 +15,6 @@ namespace compsum {
  */
 void compAdd(double contribution, double *compSum);
 
-} // namespace compsum
-} // namespace abscab_c
+} // namespace abscab
 
 #endif // COMPSUM_H

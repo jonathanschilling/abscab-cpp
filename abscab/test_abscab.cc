@@ -1,11 +1,9 @@
 
 #include <gtest/gtest.h>
 
-#include "abscab-c/util/util.h"
+#include "abscab-cpp/util/util.hh"
+#include "abscab-cpp/abscab/abscab.hh"
 
-#include "abscab-c/abscab/abscab.h"
-
-namespace abscab_c {
 namespace abscab {
 
 /** test method for Straight Wire Segment methods */
@@ -13,7 +11,7 @@ TEST(TestAbscab, CheckStraightWireSegment) {
 
 	int rowsRp = 0;
 	int colsRp = 0;
-	double **test_points_rp = util::loadColumnsFromFile("abscab-c/abscab/resources/testPointsRpStraightWireSegment.dat", &rowsRp, &colsRp);
+	double **test_points_rp = loadColumnsFromFile("abscab-cpp/abscab/resources/testPointsRpStraightWireSegment.dat", &rowsRp, &colsRp);
 	if (rowsRp < 1) {
 		printf("error: need at least one row of test point coordinates for rho'\n");
 		FAIL();
@@ -25,7 +23,7 @@ TEST(TestAbscab, CheckStraightWireSegment) {
 
 	int rowsZp = 0;
 	int colsZp = 0;
-	double **test_points_zp = util::loadColumnsFromFile("abscab-c/abscab/resources/testPointsZpStraightWireSegment.dat", &rowsZp, &colsZp);
+	double **test_points_zp = loadColumnsFromFile("abscab-cpp/abscab/resources/testPointsZpStraightWireSegment.dat", &rowsZp, &colsZp);
 	if (rowsZp < 1) {
 		printf("error: need at least one row of test point coordinates for z'\n");
 		FAIL();
@@ -48,7 +46,7 @@ TEST(TestAbscab, CheckStraightWireSegment) {
 
 	int rowsAZRef = 0;
 	int colsAZRef = 0;
-	double **aZRef = util::loadColumnsFromFile("abscab-c/abscab/resources/StraightWireSegment_A_z_ref.dat", &rowsAZRef, &colsAZRef);
+	double **aZRef = loadColumnsFromFile("abscab-cpp/abscab/resources/StraightWireSegment_A_z_ref.dat", &rowsAZRef, &colsAZRef);
 	if (rowsAZRef < 1) {
 		printf("error: need at least one row of reference values for A_z\n");
 		FAIL();
@@ -65,7 +63,7 @@ TEST(TestAbscab, CheckStraightWireSegment) {
 
 	int rowsBPhiRef = 0;
 	int colsBPhiRef = 0;
-	double **bPhiRef = util::loadColumnsFromFile("abscab-c/abscab/resources/StraightWireSegment_B_phi_ref.dat", &rowsBPhiRef, &colsBPhiRef);
+	double **bPhiRef = loadColumnsFromFile("abscab-cpp/abscab/resources/StraightWireSegment_B_phi_ref.dat", &rowsBPhiRef, &colsBPhiRef);
 	if (rowsBPhiRef < 1) {
 		printf("error: need at least one row of reference values for B_phi\n");
 		FAIL();
@@ -93,7 +91,7 @@ TEST(TestAbscab, CheckStraightWireSegment) {
 		double aZ   = straightWireSegment_A_z(rp, zp);
 		double bPhi = straightWireSegment_B_phi(rp, zp);
 
-		int aZStatus = util::assertRelAbsEquals(aZRef[0][i], aZ, toleranceAZ);
+		int aZStatus = assertRelAbsEquals(aZRef[0][i], aZ, toleranceAZ);
 		EXPECT_EQ(aZStatus, 0);
 		if (aZStatus) {
 			printf("error: mismatch at Straight Wire Segment A_z test case %d\n", i);
@@ -104,7 +102,7 @@ TEST(TestAbscab, CheckStraightWireSegment) {
 		}
 		status |= aZStatus;
 
-		int bPhiStatus = util::assertRelAbsEquals(bPhiRef[0][i], bPhi, toleranceBPhi);
+		int bPhiStatus = assertRelAbsEquals(bPhiRef[0][i], bPhi, toleranceBPhi);
 		EXPECT_EQ(aZStatus, 0);
 		if (bPhiStatus) {
 			printf("error: mismatch at Straight Wire Segment B_phi test case %d\n", i);
@@ -132,7 +130,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 
 	int rowsRp = 0;
 	int colsRp = 0;
-	double **test_points_rp = util::loadColumnsFromFile("abscab-c/abscab/resources/testPointsRpCircularWireLoop.dat", &rowsRp, &colsRp);
+	double **test_points_rp = loadColumnsFromFile("abscab-cpp/abscab/resources/testPointsRpCircularWireLoop.dat", &rowsRp, &colsRp);
 	if (rowsRp < 1) {
 		printf("error: need at least one row of test point coordinates for rho'\n");
 		FAIL();
@@ -144,7 +142,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 
 	int rowsZp = 0;
 	int colsZp = 0;
-	double **test_points_zp = util::loadColumnsFromFile("abscab-c/abscab/resources/testPointsZpCircularWireLoop.dat", &rowsZp, &colsZp);
+	double **test_points_zp = loadColumnsFromFile("abscab-cpp/abscab/resources/testPointsZpCircularWireLoop.dat", &rowsZp, &colsZp);
 	if (rowsZp < 1) {
 		printf("error: need at least one row of test point coordinates for z'\n");
 		FAIL();
@@ -167,7 +165,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 
 	int rowsAPhiRef = 0;
 	int colsAPhiRef = 0;
-	double **aPhiRef = util::loadColumnsFromFile("abscab-c/abscab/resources/CircularWireLoop_A_phi_ref.dat", &rowsAPhiRef, &colsAPhiRef);
+	double **aPhiRef = loadColumnsFromFile("abscab-cpp/abscab/resources/CircularWireLoop_A_phi_ref.dat", &rowsAPhiRef, &colsAPhiRef);
 	if (rowsAPhiRef < 1) {
 		printf("error: need at least one row of reference values for A_phi\n");
 		FAIL();
@@ -184,7 +182,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 
 	int rowsBRhoRef = 0;
 	int colsBRhoRef = 0;
-	double **bRhoRef = util::loadColumnsFromFile("abscab-c/abscab/resources/CircularWireLoop_B_rho_ref.dat", &rowsBRhoRef, &colsBRhoRef);
+	double **bRhoRef = loadColumnsFromFile("abscab-cpp/abscab/resources/CircularWireLoop_B_rho_ref.dat", &rowsBRhoRef, &colsBRhoRef);
 	if (rowsBRhoRef < 1) {
 		printf("error: need at least one row of reference values for B_rho\n");
 		FAIL();
@@ -201,7 +199,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 
 	int rowsBZRef = 0;
 	int colsBZRef = 0;
-	double **bZRef = util::loadColumnsFromFile("abscab-c/abscab/resources/CircularWireLoop_B_z_ref.dat", &rowsBZRef, &colsBZRef);
+	double **bZRef = loadColumnsFromFile("abscab-cpp/abscab/resources/CircularWireLoop_B_z_ref.dat", &rowsBZRef, &colsBZRef);
 	if (rowsBZRef < 1) {
 		printf("error: need at least one row of reference values for B_z\n");
 		FAIL();
@@ -231,7 +229,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 		double bRho = circularWireLoop_B_rho(rp, zp);
 		double bZ   = circularWireLoop_B_z(rp, zp);
 
-		int aPhiStatus = util::assertRelAbsEquals(aPhiRef[0][i], aPhi, toleranceAPhi);
+		int aPhiStatus = assertRelAbsEquals(aPhiRef[0][i], aPhi, toleranceAPhi);
 		EXPECT_EQ(aPhiStatus, 0);
 		if (aPhiStatus) {
 			printf("error: mismatch at Circular Wire Loop A_phi test case %d\n", i);
@@ -242,7 +240,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 		}
 		status |= aPhiStatus;
 
-		int bRhoStatus = util::assertRelAbsEquals(bRhoRef[0][i], bRho, toleranceBRho);
+		int bRhoStatus = assertRelAbsEquals(bRhoRef[0][i], bRho, toleranceBRho);
 		EXPECT_EQ(bRhoStatus, 0);
 		if (bRhoStatus) {
 			printf("error: mismatch at Circular Wire Loop B_rho test case %d\n", i);
@@ -253,7 +251,7 @@ TEST(TestAbscab, CheckCircularWireLoop) {
 		}
 		status |= bRhoStatus;
 
-		int bZStatus = util::assertRelAbsEquals(bZRef[0][i], bZ, toleranceBZ);
+		int bZStatus = assertRelAbsEquals(bZRef[0][i], bZ, toleranceBZ);
 		EXPECT_EQ(bZStatus, 0);
 		if (bZStatus) {
 			printf("error: mismatch at Circular Wire Loop B_z test case %d\n", i);
@@ -305,7 +303,7 @@ TEST(TestAbscab, CheckMagneticFieldInfiniteLineFilament) {
 //	double relAbsErr = fabs(bPhi - bPhiRef) / (1.0 + fabs(bPhiRef));
 //	printf("raErr = %.5e\n", relAbsErr);
 
-	EXPECT_EQ(util::assertRelAbsEquals(bPhiRef, bPhi, tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(bPhiRef, bPhi, tolerance), 0);
 }
 
 TEST(TestAbscab, CheckBPhiInfiniteLineFilament) {
@@ -333,7 +331,7 @@ TEST(TestAbscab, CheckBPhiInfiniteLineFilament) {
 //	double relAbsErr = fabs(bPhi - bPhiRef) / (1.0 + fabs(bPhiRef));
 //	printf("raErr = %.5e\n", relAbsErr);
 
-	EXPECT_EQ(util::assertRelAbsEquals(bPhiRef, bPhi, tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(bPhiRef, bPhi, tolerance), 0);
 }
 
 TEST(TestAbscab, CheckMagneticFieldInsideLongCoil) {
@@ -375,9 +373,8 @@ TEST(TestAbscab, CheckMagneticFieldInsideLongCoil) {
 //	double relAbsErr = fabs(bZ - bZRef) / (1.0 + fabs(bZRef));
 //	printf("raErr = %.5e\n", relAbsErr);
 
-	EXPECT_EQ(util::assertRelAbsEquals(bZRef, bZ, tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(bZRef, bZ, tolerance), 0);
 }
 
 } // namespace abscab
-} // namespace abscab_c
 

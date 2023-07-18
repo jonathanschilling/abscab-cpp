@@ -1,8 +1,7 @@
 
-#include "abscab-c/compsum/compsum.h"
+#include "abscab-cpp/compsum/compsum.hh"
 
-namespace abscab_c {
-namespace compsum {
+namespace abscab {
 
 /**
  * Add a single contribution to the sum.
@@ -36,5 +35,4 @@ void compAdd(double contribution, double *compSum) {
 	compSum[2] += cc;
 }
 
-} // namespace compsum
-} // namespace abscab_c
+} // namespace abscab

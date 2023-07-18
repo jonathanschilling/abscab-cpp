@@ -3,11 +3,11 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "abscab",
     srcs = ["abscab.cc"],
-    hdrs = ["abscab.h"],
+    hdrs = ["abscab.hh"],
     visibility = ["//:__subpackages__"],
     deps = [
-    	"//abscab-c/cel:cel",
-    	"//abscab-c/compsum:compsum",
+    	"//abscab-cpp/cel:cel",
+    	"//abscab-cpp/compsum:compsum",
     ],
     copts = [
     	"-O3",
@@ -51,7 +51,7 @@ cc_test(
     data = [":test_data"],
     deps = [
     	":abscab",
-    	"//abscab-c/util:util",
+    	"//abscab-cpp/util:util",
         "@com_google_googletest//:gtest_main",
         "@bazel_tools//tools/cpp/runfiles",
     ],

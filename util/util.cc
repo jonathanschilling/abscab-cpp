@@ -1,8 +1,7 @@
 
-#include "abscab-c/util/util.h"
+#include "abscab-cpp/util/util.hh"
 
-namespace abscab_c {
-namespace util {
+namespace abscab {
 
 /**
  * Check if two values are approximately equal within a prescribed tolerance.
@@ -207,6 +206,5 @@ void dumpToFile(int numCols, int numRows, double *data, char *filename) {
 	}
 }
 
-} // namespace util
-} // namespace abscab_c
+} // namespace abscab
 

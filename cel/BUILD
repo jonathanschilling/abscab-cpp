@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "cel",
     srcs = ["cel.cc"],
-    hdrs = ["cel.h"],
+    hdrs = ["cel.hh"],
     visibility = ["//:__subpackages__"],
     copts = [
     	"-O3",
@@ -21,7 +21,7 @@ cc_test(
     visibility = ["//visibility:private"],
     deps = [
     	":cel",
-    	"//abscab-c/util:util",
+    	"//abscab-cpp/util:util",
         "@com_google_googletest//:gtest_main",
     ],
     copts = [

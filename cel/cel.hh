@@ -5,8 +5,7 @@
 #include <limits.h>
 #include <math.h>
 
-namespace abscab_c {
-namespace cel {
+namespace abscab {
 
 // C99 does not define M_PI
 #ifndef M_PI
@@ -36,7 +35,6 @@ const double SQRT_EPS = sqrt(DBL_EPSILON);
  */
 double cel(double k_c, double p, double a, double b);
 
-} // namespace cel
-} // namespace abscab_c
+} // namespace abscab
 
 #endif // CEL_H

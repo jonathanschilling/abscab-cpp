@@ -1,8 +1,7 @@
 
-#include "abscab-c/cel/cel.h"
+#include "abscab-cpp/cel/cel.hh"
 
-namespace abscab_c {
-namespace cel {
+namespace abscab {
 
 /**
  * Compute the complete elliptic integral introduced in
@@ -79,5 +78,4 @@ double cel(double k_c, double p, double a, double b) {
 	return PI_2 * (a*m+b) / (m*(m+p));
 }
 
-} // namespace cel
-} // namespace abscab_c
+} // namespace abscab

@@ -10,10 +10,9 @@
 #include <omp.h>
 #endif // _OPENMP
 
-#include "abscab-c/cel/cel.h"
-#include "abscab-c/compsum/compsum.h"
+#include "abscab-cpp/cel/cel.hh"
+#include "abscab-cpp/compsum/compsum.hh"
 
-namespace abscab_c {
 namespace abscab {
 
 /** vacuum magnetic permeability in Vs/Am (CODATA-2018) */
@@ -712,6 +711,5 @@ void magneticFieldPolygonFilamentVertexSupplier(
 		double *magneticField);
 
 } // namespace abscab
-} // namespace abscab_c
 
 #endif // ABSCAB_H
