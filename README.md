@@ -24,14 +24,14 @@ we kindly ask you to cite [the corresponding article](https://doi.org/10.1016/j.
 }
 ```
 
-This is the C implementation of [ABSCAB](https://github.com/jonathanschilling/abscab).
+This is the C++ implementation of [ABSCAB](https://github.com/jonathanschilling/abscab).
 
-![Build & Test](https://github.com/jonathanschilling/abscab-c/actions/workflows/build.yml/badge.svg)
+![Build & Test](https://github.com/jonathanschilling/abscab-cpp/actions/workflows/build.yml/badge.svg)
 
 | description         | link to file |
-| ------------------- | ---------------------------------------------------------------------- |
-| main implementation | [`abscab.h`](abscab/abscab.h)         |
-| unit tests          | [`test_abscab.c`](abscab/test_abscab.c) |
-| demo code           | [`demo_abscab.c`](abscab/demo_abscab.c) |
-| parallelized        | :heavy_check_mark: (OpenMP)                                           |
+| ------------------- | ----------------------------------------- |
+| main implementation | [`abscab.cc`](abscab/abscab.cc)           |
+| unit tests          | [`test_abscab.cc`](abscab/test_abscab.cc) |
+| demo code           | [`demo_abscab.cc`](abscab/demo_abscab.cc) |
+| parallelized        | :heavy_check_mark: (OpenMP)               |
 
