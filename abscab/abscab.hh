@@ -388,7 +388,7 @@ void kernelVectorPotentialPolygonFilament(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void kernelVectorPotentialPolygonFilamentVertexSupplier(
+void kernelVectorPotentialPolygonFilament(
 		void (*vertexSupplier)(int i, double *point),
 		double current,
 		double *evalPos,
@@ -440,7 +440,7 @@ void kernelMagneticFieldPolygonFilament(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void kernelMagneticFieldPolygonFilamentVertexSupplier(
+void kernelMagneticFieldPolygonFilament(
 		void (*vertexSupplier)(int i, double *point),
 		double current,
 		double *evalPos,
@@ -465,7 +465,7 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void vectorPotentialPolygonFilament_specPar_specSum(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -487,7 +487,7 @@ void vectorPotentialPolygonFilament_specPar_specSum(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -509,7 +509,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void magneticFieldPolygonFilament_specPar_specSum(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -532,7 +532,7 @@ void magneticFieldPolygonFilament_specPar_specSum(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -556,7 +556,7 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
  * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
  * @param numProcessors number of processors to use for parallelization
  */
-void vectorPotentialPolygonFilament_specPar(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -577,7 +577,7 @@ void vectorPotentialPolygonFilament_specPar(
  * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
  * @param numProcessors number of processors to use for parallelization
  */
-void vectorPotentialPolygonFilamentVertexSupplier_specPar(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -598,7 +598,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar(
  * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
  * @param numProcessors number of processors to use for parallelization
  */
-void magneticFieldPolygonFilament_specPar(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -619,7 +619,7 @@ void magneticFieldPolygonFilament_specPar(
  * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
  * @param numProcessors number of processors to use for parallelization
  */
-void magneticFieldPolygonFilamentVertexSupplier_specPar(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -662,7 +662,7 @@ void vectorPotentialPolygonFilament(
  * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
  * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
  */
-void vectorPotentialPolygonFilamentVertexSupplier(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -702,7 +702,7 @@ void magneticFieldPolygonFilament(
  * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
  * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
  */
-void magneticFieldPolygonFilamentVertexSupplier(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,

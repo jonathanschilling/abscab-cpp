@@ -713,9 +713,9 @@ void vectorPotentialCircularFilament(double *center, double *normal, double radi
 			double ePhiZ = eRX * eY - eRY * eX;
 
 			// add contribution from wire loop to result
-			vectorPotential[3 * idxEval + 0] = aPhi * ePhiX;
-			vectorPotential[3 * idxEval + 1] = aPhi * ePhiY;
-			vectorPotential[3 * idxEval + 2] = aPhi * ePhiZ;
+			vectorPotential[3 * idxEval + 0] += aPhi * ePhiX;
+			vectorPotential[3 * idxEval + 1] += aPhi * ePhiY;
+			vectorPotential[3 * idxEval + 2] += aPhi * ePhiZ;
 		}
 	}
 }
@@ -804,9 +804,9 @@ void magneticFieldCircularFilament(double *center, double *normal, double radius
 			double bRho = bPrefactor * circularWireLoop_B_rho(rhoP, zP);
 
 			// add contribution from B_rho of wire loop to result
-			magneticField[3 * idxEval + 0] = bRho * eRX;
-			magneticField[3 * idxEval + 1] = bRho * eRY;
-			magneticField[3 * idxEval + 2] = bRho * eRZ;
+			magneticField[3 * idxEval + 0] += bRho * eRX;
+			magneticField[3 * idxEval + 1] += bRho * eRY;
+			magneticField[3 * idxEval + 2] += bRho * eRZ;
 		} else {
 			rhoP = 0.0;
 		}
@@ -852,7 +852,7 @@ void kernelVectorPotentialPolygonFilament(
 
 	double aPrefactor = MU_0_BY_2_PI * current;
 
-	// setup compensated summation objects
+	// setup compensated summation storage
 	double *aXSum;
 	double *aYSum;
 	double *aZSum;
@@ -866,7 +866,7 @@ void kernelVectorPotentialPolygonFilament(
 		aYSum = (double *) malloc (numBytesToAllocate);
 		aZSum = (double *) malloc (numBytesToAllocate);
 
-		// initialize target array to zero
+		// initialize storage to zero
 		memset(aXSum, 0, numBytesToAllocate);
 		memset(aYSum, 0, numBytesToAllocate);
 		memset(aZSum, 0, numBytesToAllocate);
@@ -874,11 +874,6 @@ void kernelVectorPotentialPolygonFilament(
 		aXSum = NULL;
 		aYSum = NULL;
 		aZSum = NULL;
-
-		// initialize target array to zero
-		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
-			memset(vectorPotential + 3 * idxEval, 0, 3 * sizeof(double));
-		}
 	}
 
 	double x_i = vertices[3 * idxSourceStart + 0];
@@ -940,9 +935,9 @@ void kernelVectorPotentialPolygonFilament(
 
 			// add contribution from wire segment to result
 			if (useCompensatedSummation) {
-				compAdd(aParallel * eX, aXSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eY, aYSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eZ, aZSum + 3 * (idxEval - idxEvalStart));
+				compAdd(aParallel * eX, &(aXSum[3 * (idxEval - idxEvalStart)]));
+				compAdd(aParallel * eY, &(aYSum[3 * (idxEval - idxEvalStart)]));
+				compAdd(aParallel * eZ, &(aZSum[3 * (idxEval - idxEvalStart)]));
 			} else {
 				vectorPotential[3 * idxEval + 0] += aParallel * eX;
 				vectorPotential[3 * idxEval + 1] += aParallel * eY;
@@ -986,7 +981,7 @@ void kernelVectorPotentialPolygonFilament(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void kernelVectorPotentialPolygonFilamentVertexSupplier(
+void kernelVectorPotentialPolygonFilament(
 		void (*vertexSupplier)(int i, double *point),
 		double current,
 		double *evalPos,
@@ -999,7 +994,7 @@ void kernelVectorPotentialPolygonFilamentVertexSupplier(
 
 	double aPrefactor = MU_0_BY_2_PI * current;
 
-	// setup compensated summation objects
+	// setup compensated summation storage
 	double *aXSum;
 	double *aYSum;
 	double *aZSum;
@@ -1013,7 +1008,7 @@ void kernelVectorPotentialPolygonFilamentVertexSupplier(
 		aYSum = (double *) malloc (numBytesToAllocate);
 		aZSum = (double *) malloc (numBytesToAllocate);
 
-		// initialize target array to zero
+		// initialize storage to zero
 		memset(aXSum, 0, numBytesToAllocate);
 		memset(aYSum, 0, numBytesToAllocate);
 		memset(aZSum, 0, numBytesToAllocate);
@@ -1021,11 +1016,6 @@ void kernelVectorPotentialPolygonFilamentVertexSupplier(
 		aXSum = NULL;
 		aYSum = NULL;
 		aZSum = NULL;
-
-		// initialize target array to zero
-		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
-			memset(vectorPotential + 3 * idxEval, 0, 3 * sizeof(double));
-		}
 	}
 
 	// get first point from vertexSupplier
@@ -1092,9 +1082,9 @@ void kernelVectorPotentialPolygonFilamentVertexSupplier(
 
 			// add contribution from wire segment to result
 			if (useCompensatedSummation) {
-				compAdd(aParallel * eX, aXSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eY, aYSum + 3 * (idxEval - idxEvalStart));
-				compAdd(aParallel * eZ, aZSum + 3 * (idxEval - idxEvalStart));
+				compAdd(aParallel * eX, &(aXSum[3 * (idxEval - idxEvalStart)]));
+				compAdd(aParallel * eY, &(aYSum[3 * (idxEval - idxEvalStart)]));
+				compAdd(aParallel * eZ, &(aZSum[3 * (idxEval - idxEvalStart)]));
 			} else {
 				vectorPotential[3 * idxEval + 0] += aParallel * eX;
 				vectorPotential[3 * idxEval + 1] += aParallel * eY;
@@ -1155,7 +1145,7 @@ void kernelMagneticFieldPolygonFilament(
 	// needs additional division by length of wire segment!
 	double bPrefactorL = MU_0_BY_4_PI * current;
 
-	// setup compensated summation targets
+	// setup compensated summation storage
 	double *bXSum;
 	double *bYSum;
 	double *bZSum;
@@ -1169,7 +1159,7 @@ void kernelMagneticFieldPolygonFilament(
 		bYSum = (double *) malloc (numBytesToAllocate);
 		bZSum = (double *) malloc (numBytesToAllocate);
 
-		// initialize target array to zero
+		// initialize storage to zero
 		memset(bXSum, 0, numBytesToAllocate);
 		memset(bYSum, 0, numBytesToAllocate);
 		memset(bZSum, 0, numBytesToAllocate);
@@ -1177,11 +1167,6 @@ void kernelMagneticFieldPolygonFilament(
 		bXSum = NULL;
 		bYSum = NULL;
 		bZSum = NULL;
-
-		// initialize target array to zero
-		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
-			memset(magneticField + 3 * idxEval, 0, 3 * sizeof(double));
-		}
 	}
 
 	double x_i = vertices[3 * idxSourceStart + 0];
@@ -1262,9 +1247,9 @@ void kernelMagneticFieldPolygonFilament(
 
 				// add contribution from wire segment to result
 				if (useCompensatedSummation) {
-					compAdd(bPhi * ePhiX, bXSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiY, bYSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiZ, bZSum + 3 * (idxEval - idxEvalStart));
+					compAdd(bPhi * ePhiX, &(bXSum[3 * (idxEval - idxEvalStart)]));
+					compAdd(bPhi * ePhiY, &(bYSum[3 * (idxEval - idxEvalStart)]));
+					compAdd(bPhi * ePhiZ, &(bZSum[3 * (idxEval - idxEvalStart)]));
 				} else {
 					magneticField[3 * idxEval + 0] += bPhi * ePhiX;
 					magneticField[3 * idxEval + 1] += bPhi * ePhiY;
@@ -1283,9 +1268,9 @@ void kernelMagneticFieldPolygonFilament(
 		// obtain compensated sums from summation objects
 		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
 			int relIdx = 3 * (idxEval - idxEvalStart);
-			magneticField[3 * idxEval + 0] = bXSum[relIdx + 0] + bXSum[relIdx + 1] + bXSum[relIdx + 2];
-			magneticField[3 * idxEval + 1] = bYSum[relIdx + 0] + bYSum[relIdx + 1] + bYSum[relIdx + 2];
-			magneticField[3 * idxEval + 2] = bZSum[relIdx + 0] + bZSum[relIdx + 1] + bZSum[relIdx + 2];
+			magneticField[3 * idxEval + 0] += bXSum[relIdx + 0] + bXSum[relIdx + 1] + bXSum[relIdx + 2];
+			magneticField[3 * idxEval + 1] += bYSum[relIdx + 0] + bYSum[relIdx + 1] + bYSum[relIdx + 2];
+			magneticField[3 * idxEval + 2] += bZSum[relIdx + 0] + bZSum[relIdx + 1] + bZSum[relIdx + 2];
 		}
 
 		free(bXSum);
@@ -1309,7 +1294,7 @@ void kernelMagneticFieldPolygonFilament(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void kernelMagneticFieldPolygonFilamentVertexSupplier(
+void kernelMagneticFieldPolygonFilament(
 		void (*vertexSupplier)(int i, double *point),
 		double current,
 		double *evalPos,
@@ -1323,7 +1308,7 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
 	// needs additional division by length of wire segment!
 	double bPrefactorL = MU_0_BY_4_PI * current;
 
-	// setup compensated summation targets
+	// setup compensated summation storage
 	double *bXSum;
 	double *bYSum;
 	double *bZSum;
@@ -1337,7 +1322,7 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
 		bYSum = (double *) malloc (numBytesToAllocate);
 		bZSum = (double *) malloc (numBytesToAllocate);
 
-		// initialize target array to zero
+		// initialize storage to zero
 		memset(bXSum, 0, numBytesToAllocate);
 		memset(bYSum, 0, numBytesToAllocate);
 		memset(bZSum, 0, numBytesToAllocate);
@@ -1345,11 +1330,6 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
 		bXSum = NULL;
 		bYSum = NULL;
 		bZSum = NULL;
-
-		// initialize target array to zero
-		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
-			memset(magneticField + 3 * idxEval, 0, 3 * sizeof(double));
-		}
 	}
 
 	// get first point from vertexSupplier
@@ -1435,9 +1415,9 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
 
 				// add contribution from wire segment to result
 				if (useCompensatedSummation) {
-					compAdd(bPhi * ePhiX, bXSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiY, bYSum + 3 * (idxEval - idxEvalStart));
-					compAdd(bPhi * ePhiZ, bZSum + 3 * (idxEval - idxEvalStart));
+					compAdd(bPhi * ePhiX, &(bXSum[3 * (idxEval - idxEvalStart)]));
+					compAdd(bPhi * ePhiY, &(bYSum[3 * (idxEval - idxEvalStart)]));
+					compAdd(bPhi * ePhiZ, &(bZSum[3 * (idxEval - idxEvalStart)]));
 				} else {
 					magneticField[3 * idxEval + 0] += bPhi * ePhiX;
 					magneticField[3 * idxEval + 1] += bPhi * ePhiY;
@@ -1459,9 +1439,9 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
 		// obtain compensated sums from summation objects
 		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
 			int relIdx = 3 * (idxEval - idxEvalStart);
-			magneticField[3 * idxEval + 0] = bXSum[relIdx + 0] + bXSum[relIdx + 1] + bXSum[relIdx + 2];
-			magneticField[3 * idxEval + 1] = bYSum[relIdx + 0] + bYSum[relIdx + 1] + bYSum[relIdx + 2];
-			magneticField[3 * idxEval + 2] = bZSum[relIdx + 0] + bZSum[relIdx + 1] + bZSum[relIdx + 2];
+			magneticField[3 * idxEval + 0] += bXSum[relIdx + 0] + bXSum[relIdx + 1] + bXSum[relIdx + 2];
+			magneticField[3 * idxEval + 1] += bYSum[relIdx + 0] + bYSum[relIdx + 1] + bYSum[relIdx + 2];
+			magneticField[3 * idxEval + 2] += bZSum[relIdx + 0] + bZSum[relIdx + 1] + bZSum[relIdx + 2];
 		}
 
 		free(bXSum);
@@ -1484,7 +1464,7 @@ void kernelMagneticFieldPolygonFilamentVertexSupplier(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void vectorPotentialPolygonFilament_specPar_specSum(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -1650,7 +1630,7 @@ void vectorPotentialPolygonFilament_specPar_specSum(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -1681,7 +1661,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
 		int idxSourceEnd   = numVertices-1;
 		int idxEvalStart   = 0;
 		int idxEvalEnd     = numEvalPos;
-		kernelVectorPotentialPolygonFilamentVertexSupplier(
+		kernelVectorPotentialPolygonFilament(
 				vertexSupplier, current,
 				evalPos,
 				vectorPotential,
@@ -1727,7 +1707,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
 				idxEvalStart   = 0;
 				idxEvalEnd     = numEvalPos;
 
-				kernelVectorPotentialPolygonFilamentVertexSupplier(
+				kernelVectorPotentialPolygonFilament(
 						vertexSupplier, current,
 						evalPos,
 						vectorPotentialContributions + idxThread * 3 * numEvalPos,
@@ -1793,7 +1773,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
 				idxEvalStart   =      idxThread    * nEvalPerThread;
 				idxEvalEnd     = min((idxThread+1) * nEvalPerThread, numEvalPos);
 
-				kernelVectorPotentialPolygonFilamentVertexSupplier(
+				kernelVectorPotentialPolygonFilament(
 						vertexSupplier, current,
 						evalPos,
 						vectorPotential,
@@ -1816,7 +1796,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void magneticFieldPolygonFilament_specPar_specSum(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -1983,7 +1963,7 @@ void magneticFieldPolygonFilament_specPar_specSum(
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
  */
-void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -2014,7 +1994,7 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
 		int idxSourceEnd   = numVertices-1;
 		int idxEvalStart   = 0;
 		int idxEvalEnd     = numEvalPos;
-		kernelMagneticFieldPolygonFilamentVertexSupplier(
+		kernelMagneticFieldPolygonFilament(
 				vertexSupplier, current,
 				evalPos,
 				magneticField,
@@ -2060,7 +2040,7 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
 				idxEvalStart   = 0;
 				idxEvalEnd     = numEvalPos;
 
-				kernelMagneticFieldPolygonFilamentVertexSupplier(
+				kernelMagneticFieldPolygonFilament(
 						vertexSupplier, current,
 						evalPos,
 						magneticFieldContributions + idxThread * 3 * numEvalPos,
@@ -2126,7 +2106,7 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
 				idxEvalStart   =      idxThread    * nEvalPerThread;
 				idxEvalEnd     = min((idxThread+1) * nEvalPerThread, numEvalPos);
 
-				kernelMagneticFieldPolygonFilamentVertexSupplier(
+				kernelMagneticFieldPolygonFilament(
 						vertexSupplier, current,
 						evalPos,
 						magneticField,
@@ -2151,7 +2131,7 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
  * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
  * @param numProcessors number of processors to use for parallelization
  */
-void vectorPotentialPolygonFilament_specPar(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -2161,7 +2141,7 @@ void vectorPotentialPolygonFilament_specPar(
 		int numProcessors) {
 
 	bool useCompensatedSummation = true;
-	vectorPotentialPolygonFilament_specPar_specSum(
+	vectorPotentialPolygonFilament(
 			numVertices, vertices, current,
 			numEvalPos, evalPos,
 			vectorPotential,
@@ -2181,7 +2161,7 @@ void vectorPotentialPolygonFilament_specPar(
  * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
  * @param numProcessors number of processors to use for parallelization
  */
-void vectorPotentialPolygonFilamentVertexSupplier_specPar(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -2191,7 +2171,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar(
 		int numProcessors) {
 
 	bool useCompensatedSummation = true;
-	vectorPotentialPolygonFilamentVertexSupplier_specPar_specSum(
+	vectorPotentialPolygonFilament(
 			numVertices, vertexSupplier, current,
 			numEvalPos, evalPos,
 			vectorPotential,
@@ -2211,7 +2191,7 @@ void vectorPotentialPolygonFilamentVertexSupplier_specPar(
  * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
  * @param numProcessors number of processors to use for parallelization
  */
-void magneticFieldPolygonFilament_specPar(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		double *vertices,
 		double current,
@@ -2221,7 +2201,7 @@ void magneticFieldPolygonFilament_specPar(
 		int numProcessors) {
 
 	bool useCompensatedSummation = true;
-	magneticFieldPolygonFilament_specPar_specSum(
+	magneticFieldPolygonFilament(
 			numVertices, vertices, current,
 			numEvalPos, evalPos,
 			magneticField,
@@ -2241,7 +2221,7 @@ void magneticFieldPolygonFilament_specPar(
  * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
  * @param numProcessors number of processors to use for parallelization
  */
-void magneticFieldPolygonFilamentVertexSupplier_specPar(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -2251,7 +2231,7 @@ void magneticFieldPolygonFilamentVertexSupplier_specPar(
 		int numProcessors) {
 
 	bool useCompensatedSummation = true;
-	magneticFieldPolygonFilamentVertexSupplier_specPar_specSum(
+	magneticFieldPolygonFilament(
 			numVertices, vertexSupplier, current,
 			numEvalPos, evalPos,
 			magneticField,
@@ -2286,7 +2266,7 @@ void vectorPotentialPolygonFilament(
 #else
 	int numProcessors = 1;
 #endif
-	vectorPotentialPolygonFilament_specPar(
+	vectorPotentialPolygonFilament(
 			numVertices, vertices, current,
 			numEvalPos, evalPos,
 			vectorPotential,
@@ -2305,7 +2285,7 @@ void vectorPotentialPolygonFilament(
  * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
  * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
  */
-void vectorPotentialPolygonFilamentVertexSupplier(
+void vectorPotentialPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -2318,7 +2298,7 @@ void vectorPotentialPolygonFilamentVertexSupplier(
 #else
 	int numProcessors = 1;
 #endif
-	vectorPotentialPolygonFilamentVertexSupplier_specPar(
+	vectorPotentialPolygonFilament(
 			numVertices, vertexSupplier, current,
 			numEvalPos, evalPos,
 			vectorPotential,
@@ -2350,7 +2330,7 @@ void magneticFieldPolygonFilament(
 #else
 	int numProcessors = 1;
 #endif
-	magneticFieldPolygonFilament_specPar(
+	magneticFieldPolygonFilament(
 			numVertices, vertices, current,
 			numEvalPos, evalPos,
 			magneticField,
@@ -2369,7 +2349,7 @@ void magneticFieldPolygonFilament(
  * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
  * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
  */
-void magneticFieldPolygonFilamentVertexSupplier(
+void magneticFieldPolygonFilament(
 		int numVertices,
 		void (*vertexSupplier)(int i, double *point),
 		double current,
@@ -2382,7 +2362,7 @@ void magneticFieldPolygonFilamentVertexSupplier(
 #else
 	int numProcessors = 1;
 #endif
-	magneticFieldPolygonFilamentVertexSupplier_specPar(
+	magneticFieldPolygonFilament(
 			numVertices, vertexSupplier, current,
 			numEvalPos, evalPos,
 			magneticField,
