@@ -27,8 +27,6 @@ const double MU_0_BY_2_PI = MU_0 / (2.0 * M_PI);
 /** vacuum magnetic permeability, divided by 4 pi */
 const double MU_0_BY_4_PI = MU_0 / (4.0 * M_PI);
 
-int min(int x, int y);
-
 /////// A_z of straight wire segment
 
 /**
