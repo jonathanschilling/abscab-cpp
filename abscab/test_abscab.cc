@@ -376,5 +376,112 @@ TEST(TestAbscab, CheckMagneticFieldInsideLongCoil) {
 	EXPECT_EQ(assertRelAbsEquals(bZRef, bZ, tolerance), 0);
 }
 
+// check that previous field contributions are preserved
+// for circular wire loop methods
+TEST(TestAbscab, CheckPreseveranceCircularWireLoop) {
+
+	double tolerance = 1.0e-15;
+
+	double center[3] = { 1.0, 2.0, 3.0 };
+	double normal[3] = { 4.0, 5.0, 6.0 };
+	double radius = 7.89;
+
+	double current_1 = 12.3;
+	double current_2 = 45.6;
+
+	double evalPos[3] = { 7.0, 8.0, 9.0 };
+
+	// reference: add two contributions
+	double vectorPotential_ref[3] = { 0.0, 0.0, 0.0 };
+	vectorPotentialCircularFilament(center, normal, radius, current_1 + current_2, 1, evalPos, vectorPotential_ref);
+
+	// to be tested: add 
+	double vectorPotential[3] = { 0.0, 0.0, 0.0 };
+	vectorPotentialCircularFilament(center, normal, radius, current_1, 1, evalPos, vectorPotential);
+	vectorPotentialCircularFilament(center, normal, radius, current_2, 1, evalPos, vectorPotential);
+
+	EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[0], vectorPotential[0], tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[1], vectorPotential[1], tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[2], vectorPotential[2], tolerance), 0);
+
+	// and again for the magnetic field ...
+	double magneticField_ref[3] = { 0.0, 0.0, 0.0 };
+	magneticFieldCircularFilament(center, normal, radius, current_1 + current_2, 1, evalPos, magneticField_ref);
+
+	double magneticField[3] = { 0.0, 0.0, 0.0 };
+	magneticFieldCircularFilament(center, normal, radius, current_1, 1, evalPos, magneticField);
+	magneticFieldCircularFilament(center, normal, radius, current_2, 1, evalPos, magneticField);
+
+	EXPECT_EQ(assertRelAbsEquals(magneticField_ref[0], magneticField[0], tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(magneticField_ref[1], magneticField[1], tolerance), 0);
+	EXPECT_EQ(assertRelAbsEquals(magneticField_ref[2], magneticField[2], tolerance), 0);
+}
+
+TEST(TestAbscab, CheckPreseverancePolygonFilament) {
+
+	double tolerance = 1.0e-15;
+
+	double vertices[4 * 3] = {
+		0.0, 0.0, 0.0,
+		1.0, 2.0, 3.0,
+		4.0, 5.0, 6.0,
+		7.0, 8.0, 9.0
+	};
+
+	double current_1 = 1.23;
+	double current_2 = 4.56;
+
+	for (int numProcessors = 1; numProcessors < 3; ++numProcessors) {
+		for (int compensatedSummationCase = 0; compensatedSummationCase < 2; ++compensatedSummationCase) {
+			bool useCompensatedSummation = (compensatedSummationCase == 0);
+			for (int numEvalPos = 1; numEvalPos < 6; numEvalPos += 4) {
+
+				int numBytes = numEvalPos * 3 * sizeof(double);
+
+				double *evalPos = (double *) malloc(numBytes);
+				if (evalPos == NULL) {
+					FAIL() << "could not allocate evalPos";
+				}
+				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
+					evalPos[idxEvalPos * 3 + 0] = -(idxEvalPos + 1);
+					evalPos[idxEvalPos * 3 + 1] = -(idxEvalPos + 1);
+					evalPos[idxEvalPos * 3 + 2] = -(idxEvalPos + 1);
+				}
+
+				double *vectorPotential_ref = (double *) malloc(numBytes);
+				if (vectorPotential_ref == NULL) {
+					FAIL() << "could not allocate vectorPotential_ref";
+				}
+				memset(vectorPotential_ref, 0, numBytes);
+
+				vectorPotentialPolygonFilament(4, vertices, current_1 + current_2, numEvalPos, evalPos, vectorPotential_ref, numProcessors, useCompensatedSummation);
+
+				double *vectorPotential = (double *) malloc(numBytes);
+				if (vectorPotential == NULL) {
+					FAIL() << "could not allocate vectorPotential";
+				}
+				memset(vectorPotential, 0, numBytes);
+
+				vectorPotentialPolygonFilament(4, vertices, current_1, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
+				vectorPotentialPolygonFilament(4, vertices, current_2, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
+
+				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
+					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 0], vectorPotential[idxEvalPos * 3 + 0], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 1], vectorPotential[idxEvalPos * 3 + 1], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 2], vectorPotential[idxEvalPos * 3 + 2], tolerance), 0);
+				}
+
+				free(vectorPotential);
+				free(vectorPotential_ref);
+				free(evalPos);
+			}
+		}
+	}
+}
+
+
+
+
+
 } // namespace abscab
 

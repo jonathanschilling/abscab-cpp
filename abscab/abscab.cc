@@ -955,9 +955,9 @@ void kernelVectorPotentialPolygonFilament(
 		// obtain compensated sums from summation objects
 		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
 			int relIdx = 3 * (idxEval - idxEvalStart);
-			vectorPotential[3 * idxEval + 0] = aXSum[relIdx + 0] + aXSum[relIdx + 1] + aXSum[relIdx + 2];
-			vectorPotential[3 * idxEval + 1] = aYSum[relIdx + 0] + aYSum[relIdx + 1] + aYSum[relIdx + 2];
-			vectorPotential[3 * idxEval + 2] = aZSum[relIdx + 0] + aZSum[relIdx + 1] + aZSum[relIdx + 2];
+			vectorPotential[3 * idxEval + 0] += aXSum[relIdx + 0] + aXSum[relIdx + 1] + aXSum[relIdx + 2];
+			vectorPotential[3 * idxEval + 1] += aYSum[relIdx + 0] + aYSum[relIdx + 1] + aYSum[relIdx + 2];
+			vectorPotential[3 * idxEval + 2] += aZSum[relIdx + 0] + aZSum[relIdx + 1] + aZSum[relIdx + 2];
 		}
 
 		free(aXSum);
@@ -1019,7 +1019,7 @@ void kernelVectorPotentialPolygonFilament(
 	}
 
 	// get first point from vertexSupplier
-	double *pointData = (double *) malloc(3 * sizeof(double));
+	double pointData[3];
 	vertexSupplier(idxSourceStart, pointData);
 	double x_i = pointData[0];
 	double y_i = pointData[1];
@@ -1098,16 +1098,13 @@ void kernelVectorPotentialPolygonFilament(
 		z_i = z_f;
 	}
 
-	// return target for vertexSupplier not needed anymore
-	free(pointData);
-
 	if (useCompensatedSummation) {
 		// obtain compensated sums from summation objects
 		for (int idxEval = idxEvalStart; idxEval < idxEvalEnd; ++idxEval) {
 			int relIdx = 3 * (idxEval - idxEvalStart);
-			vectorPotential[3 * idxEval + 0] = aXSum[relIdx + 0] + aXSum[relIdx + 1] + aXSum[relIdx + 2];
-			vectorPotential[3 * idxEval + 1] = aYSum[relIdx + 0] + aYSum[relIdx + 1] + aYSum[relIdx + 2];
-			vectorPotential[3 * idxEval + 2] = aZSum[relIdx + 0] + aZSum[relIdx + 1] + aZSum[relIdx + 2];
+			vectorPotential[3 * idxEval + 0] += aXSum[relIdx + 0] + aXSum[relIdx + 1] + aXSum[relIdx + 2];
+			vectorPotential[3 * idxEval + 1] += aYSum[relIdx + 0] + aYSum[relIdx + 1] + aYSum[relIdx + 2];
+			vectorPotential[3 * idxEval + 2] += aZSum[relIdx + 0] + aZSum[relIdx + 1] + aZSum[relIdx + 2];
 		}
 
 		free(aXSum);
@@ -1333,7 +1330,7 @@ void kernelMagneticFieldPolygonFilament(
 	}
 
 	// get first point from vertexSupplier
-	double *pointData = (double *) malloc(3 * sizeof(double));
+	double pointData[3];
 	vertexSupplier(idxSourceStart, pointData);
 	double x_i = pointData[0];
 	double y_i = pointData[1];
@@ -1431,9 +1428,6 @@ void kernelMagneticFieldPolygonFilament(
 		y_i = y_f;
 		z_i = z_f;
 	}
-
-	// return target for vertexSupplier not needed anymore
-	free(pointData);
 
 	if (useCompensatedSummation) {
 		// obtain compensated sums from summation objects
@@ -1533,13 +1527,14 @@ void vectorPotentialPolygonFilament(
 			int idxEvalStart   = 0;
 			int idxEvalEnd     = numEvalPos;
 
-			double *vectorPotentialContributions = (double *) malloc(nThreads * 3 * numEvalPos * sizeof(double));
+			int numBytes = nThreads * numEvalPos * 3 * sizeof(double);
+			double *vectorPotentialContributions = (double *) malloc(numBytes);
 			if (vectorPotentialContributions == NULL) {
 				printf("failed to allocate temporary array for vector potential contributions\n");
 				return;
 			}
+			memset(vectorPotentialContributions, 0, numBytes);
 
-			// parallelized evaluation
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif // _OPENMP
@@ -1716,11 +1711,13 @@ void vectorPotentialPolygonFilament(
 			int idxEvalStart   = 0;
 			int idxEvalEnd     = numEvalPos;
 
-			double *vectorPotentialContributions = (double *) malloc(nThreads * numEvalPos * 3 * sizeof(double));
+			int numBytes = nThreads * numEvalPos * 3 * sizeof(double);
+			double *vectorPotentialContributions = (double *) malloc(numBytes);
 			if (vectorPotentialContributions == NULL) {
 				printf("failed to allocate temporary array for vector potential contributions\n");
 				return;
 			}
+			memset(vectorPotentialContributions, 0, numBytes);
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -1899,11 +1896,13 @@ void magneticFieldPolygonFilament(
 			int idxEvalStart   = 0;
 			int idxEvalEnd     = numEvalPos;
 
-			double *magneticFieldContributions = (double *) malloc(nThreads * numEvalPos * 3 * sizeof(double));
+			int numBytes = nThreads * numEvalPos * 3 * sizeof(double);
+			double *magneticFieldContributions = (double *) malloc(numBytes);
 			if (magneticFieldContributions == NULL) {
 				printf("failed to allocate temporary array for magnetic field contributions\n");
 				return;
 			}
+			memset(magneticFieldContributions, 0, numBytes);
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -2083,11 +2082,13 @@ void magneticFieldPolygonFilament(
 			int idxEvalStart   = 0;
 			int idxEvalEnd     = numEvalPos;
 
-			double *magneticFieldContributions = (double *) malloc(nThreads * numEvalPos * 3 * sizeof(double));
+			int numBytes = nThreads * numEvalPos * 3 * sizeof(double);
+			double *magneticFieldContributions = (double *) malloc(numBytes);
 			if (magneticFieldContributions == NULL) {
 				printf("failed to allocate temporary array for magnetic field contributions\n");
 				return;
 			}
+			memset(magneticFieldContributions, 0, numBytes);
 
 #ifdef _OPENMP
 #pragma omp parallel for
