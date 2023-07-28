@@ -876,15 +876,15 @@ void kernelVectorPotentialPolygonFilament(
 		aZSum = NULL;
 	}
 
-	double x_i = vertices[3 * idxSourceStart + 0];
-	double y_i = vertices[3 * idxSourceStart + 1];
-	double z_i = vertices[3 * idxSourceStart + 2];
+	double x_i = vertices[idxSourceStart * 3 + 0];
+	double y_i = vertices[idxSourceStart * 3 + 1];
+	double z_i = vertices[idxSourceStart * 3 + 2];
 
 	for (int idxSource = idxSourceStart; idxSource < idxSourceEnd; ++idxSource) {
 
-		double x_f = vertices[3 * (idxSource + 1) + 0];
-		double y_f = vertices[3 * (idxSource + 1) + 1];
-		double z_f = vertices[3 * (idxSource + 1) + 2];
+		double x_f = vertices[(idxSource + 1) * 3 + 0];
+		double y_f = vertices[(idxSource + 1) * 3 + 1];
+		double z_f = vertices[(idxSource + 1) * 3 + 2];
 
 		// vector from start to end of i:th wire segment
 		double dx = x_f - x_i;

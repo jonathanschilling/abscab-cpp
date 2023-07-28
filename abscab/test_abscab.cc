@@ -417,11 +417,12 @@ TEST(TestAbscab, CheckPreseveranceCircularWireLoop) {
 	EXPECT_EQ(assertRelAbsEquals(magneticField_ref[2], magneticField[2], tolerance), 0);
 }
 
-TEST(TestAbscab, CheckPreseverancePolygonFilament) {
+TEST(TestAbscab, CheckPreseverancePolygonFilamentArrays) {
 
 	double tolerance = 1.0e-15;
 
-	double vertices[4 * 3] = {
+	int numVertices = 4;
+	double vertices[numVertices * 3] = {
 		0.0, 0.0, 0.0,
 		1.0, 2.0, 3.0,
 		4.0, 5.0, 6.0,
@@ -454,7 +455,7 @@ TEST(TestAbscab, CheckPreseverancePolygonFilament) {
 				}
 				memset(vectorPotential_ref, 0, numBytes);
 
-				vectorPotentialPolygonFilament(4, vertices, current_1 + current_2, numEvalPos, evalPos, vectorPotential_ref, numProcessors, useCompensatedSummation);
+				vectorPotentialPolygonFilament(numVertices, vertices, current_1 + current_2, numEvalPos, evalPos, vectorPotential_ref, numProcessors, useCompensatedSummation);
 
 				double *vectorPotential = (double *) malloc(numBytes);
 				if (vectorPotential == NULL) {
@@ -462,8 +463,8 @@ TEST(TestAbscab, CheckPreseverancePolygonFilament) {
 				}
 				memset(vectorPotential, 0, numBytes);
 
-				vectorPotentialPolygonFilament(4, vertices, current_1, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
-				vectorPotentialPolygonFilament(4, vertices, current_2, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
+				vectorPotentialPolygonFilament(numVertices, vertices, current_1, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
+				vectorPotentialPolygonFilament(numVertices, vertices, current_2, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
 
 				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
 					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 0], vectorPotential[idxEvalPos * 3 + 0], tolerance), 0);
@@ -479,7 +480,81 @@ TEST(TestAbscab, CheckPreseverancePolygonFilament) {
 	}
 }
 
+TEST(TestAbscab, CheckPreseverancePolygonFilamentVertexSupplier) {
 
+	double tolerance = 1.0e-15;
+
+	int numVertices = 4;
+	void (*vertexSupplier)(int, double *) = [](int i, double *point) {
+		switch (i) {
+		case 0:
+			point[0] = 0.0; point[1] = 0.0; point[2] = 0.0;
+			break;
+		case 1:
+			point[0] = 1.0; point[1] = 2.0; point[2] = 3.0;
+			break;
+		case 2:
+			point[0] = 4.0; point[1] = 5.0; point[2] = 6.0;
+			break;
+		case 3:
+			point[0] = 7.0; point[1] = 8.0; point[2] = 9.0;
+			break;
+		default:
+
+			break;
+		}
+	};
+
+	double current_1 = 1.23;
+	double current_2 = 4.56;
+
+	for (int numProcessors = 1; numProcessors < 3; ++numProcessors) {
+		for (int compensatedSummationCase = 0; compensatedSummationCase < 2; ++compensatedSummationCase) {
+			bool useCompensatedSummation = (compensatedSummationCase == 0);
+			for (int numEvalPos = 1; numEvalPos < 6; numEvalPos += 4) {
+
+				int numBytes = numEvalPos * 3 * sizeof(double);
+
+				double *evalPos = (double *) malloc(numBytes);
+				if (evalPos == NULL) {
+					FAIL() << "could not allocate evalPos";
+				}
+				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
+					evalPos[idxEvalPos * 3 + 0] = -(idxEvalPos + 1);
+					evalPos[idxEvalPos * 3 + 1] = -(idxEvalPos + 1);
+					evalPos[idxEvalPos * 3 + 2] = -(idxEvalPos + 1);
+				}
+
+				double *vectorPotential_ref = (double *) malloc(numBytes);
+				if (vectorPotential_ref == NULL) {
+					FAIL() << "could not allocate vectorPotential_ref";
+				}
+				memset(vectorPotential_ref, 0, numBytes);
+
+				vectorPotentialPolygonFilament(numVertices, vertexSupplier, current_1 + current_2, numEvalPos, evalPos, vectorPotential_ref, numProcessors, useCompensatedSummation);
+
+				double *vectorPotential = (double *) malloc(numBytes);
+				if (vectorPotential == NULL) {
+					FAIL() << "could not allocate vectorPotential";
+				}
+				memset(vectorPotential, 0, numBytes);
+
+				vectorPotentialPolygonFilament(numVertices, vertexSupplier, current_1, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
+				vectorPotentialPolygonFilament(numVertices, vertexSupplier, current_2, numEvalPos, evalPos, vectorPotential, numProcessors, useCompensatedSummation);
+
+				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
+					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 0], vectorPotential[idxEvalPos * 3 + 0], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 1], vectorPotential[idxEvalPos * 3 + 1], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(vectorPotential_ref[idxEvalPos * 3 + 2], vectorPotential[idxEvalPos * 3 + 2], tolerance), 0);
+				}
+
+				free(vectorPotential);
+				free(vectorPotential_ref);
+				free(evalPos);
+			}
+		}
+	}
+}
 
 
 
