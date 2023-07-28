@@ -1456,10 +1456,12 @@ void kernelMagneticFieldPolygonFilament(
  * Compute the magnetic vector potential of a polygon filament
  * at a number of evaluation locations.
  *
- * @param vertices [3: x, y, z][numVertices] points along polygon; in m
+ * @param numVertices number of points along polygon
+ * @param vertices [numVertices][3: x, y, z] points along polygon; in m
  * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
+ * @param numEvalPos number of evaluation locations
+ * @param evalPos [numEvalPos][3: x, y, z] evaluation locations; in m
+ * @param vectorPotential [numEvalPos][3: x, y, z] target array for magnetic vector potential at evaluation locations; in Tm
  * @param numProcessors number of processors to use for parallelization
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
@@ -1479,20 +1481,22 @@ void vectorPotentialPolygonFilament(
 		return;
 	}
 
+	// number of straight wire segments
+	int numSegments = numVertices - 1;
+
 	if (numProcessors < 1) {
 		printf("need at least 1 processor, but only got %d\n", numProcessors);
 		return;
 	}
 
 	if (current == 0.0) {
-		// TODO: memset(0, vectorPotential)
 		return;
 	}
 
 	if (numProcessors == 1) {
 		// single-threaded call
 		int idxSourceStart = 0;
-		int idxSourceEnd   = numVertices-1;
+		int idxSourceEnd   = numSegments;
 		int idxEvalStart   = 0;
 		int idxEvalEnd     = numEvalPos;
 		kernelVectorPotentialPolygonFilament(
@@ -1504,8 +1508,8 @@ void vectorPotentialPolygonFilament(
 	} else {
 		// use multithreading
 
-		if (numVertices-1 > numEvalPos) {
-			// parallelize over nSource-1
+		if (numSegments > numEvalPos) {
+			// parallelize over numSegments
 
 			// Note that each thread needs its own copy of the vectorPotential array,
 			// so this approach might need quite some memory in case the number of
@@ -1513,16 +1517,21 @@ void vectorPotentialPolygonFilament(
 
 			int nThreads;
 			int nSourcePerThread;
-			if (numVertices-1 < numProcessors) {
-				nThreads = numVertices-1;
+			int nSourceRemainder;
+			if (numSegments < numProcessors) {
+				nThreads = numSegments;
+
 				nSourcePerThread = 1;
+				nSourceRemainder = 0;
 			} else {
 				nThreads = numProcessors;
 
-				// It is better that many threads do more
-				// than one thread needs to do more.
-				nSourcePerThread = (int) ceil( (numVertices-1.0) / nThreads);
+				nSourcePerThread = numSegments / nThreads;
+				nSourceRemainder = numSegments % nThreads;
 			}
+			
+			int idxEvalStart   = 0;
+			int idxEvalEnd     = numEvalPos;
 
 			double *vectorPotentialContributions = (double *) malloc(nThreads * 3 * numEvalPos * sizeof(double));
 			if (vectorPotentialContributions == NULL) {
@@ -1531,81 +1540,90 @@ void vectorPotentialPolygonFilament(
 			}
 
 			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart =      idxThread    * nSourcePerThread;
-				idxSourceEnd   = min((idxThread+1) * nSourcePerThread, numVertices-1);
-				idxEvalStart   = 0;
-				idxEvalEnd     = numEvalPos;
+
+				int idxSourceStart =  idxThread      * nSourcePerThread;
+				int idxSourceEnd   = (idxThread + 1) * nSourcePerThread;
+				if (idxThread < nSourceRemainder) {
+					idxSourceStart += idxThread;
+					idxSourceEnd   += idxThread + 1;
+				} else {
+					idxSourceStart += nSourceRemainder;
+					idxSourceEnd   += nSourceRemainder;
+				}
 
 				kernelVectorPotentialPolygonFilament(
 						vertices, current,
 						evalPos,
-						vectorPotentialContributions + idxThread * 3 * numEvalPos,
+						&(vectorPotentialContributions[idxThread * numEvalPos * 3]),
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
 
 			// sum up contributions from source chunks
 			if (useCompensatedSummation) {
-				double *sumX = (double *) malloc(3 * sizeof(double));
-				double *sumY = (double *) malloc(3 * sizeof(double));
-				double *sumZ = (double *) malloc(3 * sizeof(double));
-				for (int i=0; i<numEvalPos; ++i) {
-					memset(sumX, 0, 3 * sizeof(*sumX));
-					memset(sumY, 0, 3 * sizeof(*sumY));
-					memset(sumZ, 0, 3 * sizeof(*sumZ));
-					// TODO: bad memory access pattern here --> potential bottleneck !!!
+				for (int i = 0; i < numEvalPos; ++i) {
+					double sumX[3] = { 0.0, 0.0, 0.0 };
+					double sumY[3] = { 0.0, 0.0, 0.0 };
+					double sumZ[3] = { 0.0, 0.0, 0.0 };
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						// TODO: bad memory access pattern here --> potential bottleneck !!!
+						compAdd(vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 0], sumX);
+						compAdd(vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 1], sumY);
+						compAdd(vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 2], sumZ);
 					}
-					vectorPotential[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
-					vectorPotential[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
-					vectorPotential[3 * i + 2] = sumZ[0] + sumZ[1] + sumZ[2];
+					vectorPotential[i * 3 + 0] += sumX[0] + sumX[1] + sumX[2];
+					vectorPotential[i * 3 + 1] += sumY[0] + sumY[1] + sumY[2];
+					vectorPotential[i * 3 + 2] += sumZ[0] + sumZ[1] + sumZ[2];
 				}
-				free(sumX);
-				free(sumY);
-				free(sumZ);
 			} else {
-				// TODO: memset(vectorPotential, 0)
 				for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-					for (int i=0; i<numEvalPos; ++i) {
-						vectorPotential[3 * i + 0] += vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0];
-						vectorPotential[3 * i + 1] += vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1];
-						vectorPotential[3 * i + 2] += vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2];
+					for (int i = 0; i < numEvalPos; ++i) {
+						vectorPotential[i * 3 + 0] += vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 0];
+						vectorPotential[i * 3 + 1] += vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 1];
+						vectorPotential[i * 3 + 2] += vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 2];
 					}
 				}
 			}
 
 			free(vectorPotentialContributions);
-		} else { // nEval > nSource
-			// parallelize over nEval
+		} else { // numEvalPos > numSegments
+			// parallelize over numEvalPos
 
 			int nThreads;
+			int idxSourceStart = 0;
+			int idxSourceEnd   = numSegments;
 			int nEvalPerThread;
+			int nEvalRemainder;
 			if (numEvalPos < numProcessors) {
 				nThreads = numEvalPos;
+
 				nEvalPerThread = 1;
+				nEvalRemainder = 0;
 			} else {
 				nThreads = numProcessors;
-				nEvalPerThread = (int) ceil( ((double) numEvalPos) / nThreads );
+
+				nEvalPerThread = numEvalPos / nThreads;
+				nEvalRemainder = numEvalPos % nThreads;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart = 0;
-				idxSourceEnd   = numVertices-1;
-				idxEvalStart   =      idxThread    * nEvalPerThread;
-				idxEvalEnd     = min((idxThread+1) * nEvalPerThread, numEvalPos);
+
+				int idxEvalStart =  idxThread      * nEvalPerThread;
+				int idxEvalEnd   = (idxThread + 1) * nEvalPerThread;
+				if (idxThread < nEvalRemainder) {
+					idxEvalStart += idxThread;
+					idxEvalEnd   += idxThread + 1;
+				} else {
+					idxEvalStart += nEvalRemainder;
+					idxEvalEnd   += nEvalRemainder;
+				}
 
 				kernelVectorPotentialPolygonFilament(
 						vertices, current,
@@ -1614,7 +1632,7 @@ void vectorPotentialPolygonFilament(
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
-		} // parallelize over nSource or nEval
+		} // parallelize over numSegments or numEvalPos
 	} // parallelization
 }
 
@@ -1622,10 +1640,12 @@ void vectorPotentialPolygonFilament(
  * Compute the magnetic vector potential of a polygon filament
  * at a number of evaluation locations.
  *
- * @param void (*vertexSupplier)(int i, double *point): callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
+ * @param numVertices number of vertices to obtain from vertexSupplier
+ * @param vertexSupplier callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
  * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
+ * @param numEvalPos number of evaluation locations
+ * @param evalPos [numEvalPos][3: x, y, z] evaluation locations; in m
+ * @param vectorPotential [numEvalPos][3: x, y, z] target array for magnetic vector potential at evaluation locations; in Tm
  * @param numProcessors number of processors to use for parallelization
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
@@ -1645,20 +1665,21 @@ void vectorPotentialPolygonFilament(
 		return;
 	}
 
+	int numSegments = numVertices - 1;
+
 	if (numProcessors < 1) {
 		printf("need at least 1 processor, but only got %d\n", numProcessors);
 		return;
 	}
 
 	if (current == 0.0) {
-		// TODO: memset(0, vectorPotential)
 		return;
 	}
 
 	if (numProcessors == 1) {
 		// single-threaded call
 		int idxSourceStart = 0;
-		int idxSourceEnd   = numVertices-1;
+		int idxSourceEnd   = numSegments;
 		int idxEvalStart   = 0;
 		int idxEvalEnd     = numEvalPos;
 		kernelVectorPotentialPolygonFilament(
@@ -1670,8 +1691,8 @@ void vectorPotentialPolygonFilament(
 	} else {
 		// use multithreading
 
-		if (numVertices-1 > numEvalPos) {
-			// parallelize over nSource-1
+		if (numSegments > numEvalPos) {
+			// parallelize over numSegments
 
 			// Note that each thread needs its own copy of the vectorPotential array,
 			// so this approach might need quite some memory in case the number of
@@ -1679,99 +1700,112 @@ void vectorPotentialPolygonFilament(
 
 			int nThreads;
 			int nSourcePerThread;
-			if (numVertices-1 < numProcessors) {
-				nThreads = numVertices-1;
+			int nSourceRemainder;
+			if (numSegments < numProcessors) {
+				nThreads = numSegments;
+
 				nSourcePerThread = 1;
+				nSourceRemainder = 0;
 			} else {
 				nThreads = numProcessors;
 
-				// It is better that many threads do more
-				// than one thread needs to do more.
-				nSourcePerThread = (int) ceil( (numVertices-1.0) / nThreads);
+				nSourcePerThread = numSegments / nThreads;
+				nSourceRemainder = numSegments % nThreads;
 			}
+			
+			int idxEvalStart   = 0;
+			int idxEvalEnd     = numEvalPos;
 
-			double *vectorPotentialContributions = (double *) malloc(nThreads * 3 * numEvalPos * sizeof(double));
+			double *vectorPotentialContributions = (double *) malloc(nThreads * numEvalPos * 3 * sizeof(double));
 			if (vectorPotentialContributions == NULL) {
 				printf("failed to allocate temporary array for vector potential contributions\n");
 				return;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart =      idxThread    * nSourcePerThread;
-				idxSourceEnd   = min((idxThread+1) * nSourcePerThread, numVertices-1);
-				idxEvalStart   = 0;
-				idxEvalEnd     = numEvalPos;
+				
+				int idxSourceStart =  idxThread      * nSourcePerThread;
+				int idxSourceEnd   = (idxThread + 1) * nSourcePerThread;
+				if (idxThread < nSourceRemainder) {
+					idxSourceStart += idxThread;
+					idxSourceEnd   += idxThread + 1;
+				} else {
+					idxSourceStart += nSourceRemainder;
+					idxSourceEnd   += nSourceRemainder;
+				}
 
 				kernelVectorPotentialPolygonFilament(
 						vertexSupplier, current,
 						evalPos,
-						vectorPotentialContributions + idxThread * 3 * numEvalPos,
+						&(vectorPotentialContributions[idxThread * numEvalPos * 3]),
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
 
 			// sum up contributions from source chunks
 			if (useCompensatedSummation) {
-				double *sumX = (double *) malloc(3 * sizeof(double));
-				double *sumY = (double *) malloc(3 * sizeof(double));
-				double *sumZ = (double *) malloc(3 * sizeof(double));
 				for (int i=0; i<numEvalPos; ++i) {
-					memset(sumX, 0, 3 * sizeof(*sumX));
-					memset(sumY, 0, 3 * sizeof(*sumY));
-					memset(sumZ, 0, 3 * sizeof(*sumZ));
-					// TODO: bad memory access pattern here --> potential bottleneck !!!
+					double sumX[3] = { 0.0, 0.0, 0.0 };
+					double sumY[3] = { 0.0, 0.0, 0.0 };
+					double sumZ[3] = { 0.0, 0.0, 0.0 };
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						// TODO: bad memory access pattern here --> potential bottleneck !!!
+						compAdd(vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 0], sumX);
+						compAdd(vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 1], sumY);
+						compAdd(vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 2], sumZ);
 					}
-					vectorPotential[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
-					vectorPotential[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
-					vectorPotential[3 * i + 2] = sumZ[0] + sumZ[1] + sumZ[2];
+					vectorPotential[i * 3 + 0] += sumX[0] + sumX[1] + sumX[2];
+					vectorPotential[i * 3 + 1] += sumY[0] + sumY[1] + sumY[2];
+					vectorPotential[i * 3 + 2] += sumZ[0] + sumZ[1] + sumZ[2];
 				}
-				free(sumX);
-				free(sumY);
-				free(sumZ);
 			} else {
-				// TODO: memset(vectorPotential, 0)
 				for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
 					for (int i=0; i<numEvalPos; ++i) {
-						vectorPotential[3 * i + 0] += vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 0];
-						vectorPotential[3 * i + 1] += vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 1];
-						vectorPotential[3 * i + 2] += vectorPotentialContributions[idxThread * 3 * numEvalPos + 3 * i + 2];
+						vectorPotential[i * 3 + 0] += vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 0];
+						vectorPotential[i * 3 + 1] += vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 1];
+						vectorPotential[i * 3 + 2] += vectorPotentialContributions[(idxThread * numEvalPos + i) * 3 + 2];
 					}
 				}
 			}
 
 			free(vectorPotentialContributions);
-		} else { // nEval > nSource
-			// parallelize over nEval
+		} else { // numEvalPos > numSegments
+			// parallelize over numEvalPos
 
 			int nThreads;
+			int idxSourceStart = 0;
+			int idxSourceEnd   = numSegments;
 			int nEvalPerThread;
+			int nEvalRemainder;
 			if (numEvalPos < numProcessors) {
 				nThreads = numEvalPos;
+
 				nEvalPerThread = 1;
+				nEvalRemainder = 0;
 			} else {
 				nThreads = numProcessors;
-				nEvalPerThread = (int) ceil( ((double) numEvalPos) / nThreads );
+
+				nEvalPerThread = numEvalPos / nThreads;
+				nEvalRemainder = numEvalPos % nThreads;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart = 0;
-				idxSourceEnd   = numVertices-1;
-				idxEvalStart   =      idxThread    * nEvalPerThread;
-				idxEvalEnd     = min((idxThread+1) * nEvalPerThread, numEvalPos);
+				
+				int idxEvalStart =  idxThread      * nEvalPerThread;
+				int idxEvalEnd   = (idxThread + 1) * nEvalPerThread;
+				if (idxThread < nEvalRemainder) {
+					idxEvalStart += idxThread;
+					idxEvalEnd   += idxThread + 1;
+				} else {
+					idxEvalStart += nEvalRemainder;
+					idxEvalEnd   += nEvalRemainder;
+				}
 
 				kernelVectorPotentialPolygonFilament(
 						vertexSupplier, current,
@@ -1788,10 +1822,12 @@ void vectorPotentialPolygonFilament(
  * Compute the magnetic field of a polygon filament
  * at a number of evaluation locations.
  *
- * @param vertices [3: x, y, z][numVertices] points along polygon; in m
+ * @param numVertices number of points along polygon
+ * @param vertices [numVertices][3: x, y, z] points along polygon; in m
  * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
+ * @param numEvalPos number of evaluation locations
+ * @param evalPos [numEvalPos][3: x, y, z] evaluation locations; in m
+ * @param magneticField [numEvalPos][3: x, y, z] target array for magnetic field at evaluation locations; inT
  * @param numProcessors number of processors to use for parallelization
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
@@ -1811,20 +1847,22 @@ void magneticFieldPolygonFilament(
 		return;
 	}
 
+	// number of straight wire segments
+	int numSegments = numVertices - 1;
+
 	if (numProcessors < 1) {
 		printf("need at least 1 processor, but only got %d\n", numProcessors);
 		return;
 	}
 
 	if (current == 0.0) {
-		// TODO: memset(0, magneticField)
 		return;
 	}
 
 	if (numProcessors == 1) {
 		// single-threaded call
 		int idxSourceStart = 0;
-		int idxSourceEnd   = numVertices-1;
+		int idxSourceEnd   = numSegments;
 		int idxEvalStart   = 0;
 		int idxEvalEnd     = numEvalPos;
 		kernelMagneticFieldPolygonFilament(
@@ -1836,8 +1874,8 @@ void magneticFieldPolygonFilament(
 	} else {
 		// use multithreading
 
-		if (numVertices-1 > numEvalPos) {
-			// parallelize over nSource-1
+		if (numSegments > numEvalPos) {
+			// parallelize over numSegments
 
 			// Note that each thread needs its own copy of the vectorPotential array,
 			// so this approach might need quite some memory in case the number of
@@ -1845,99 +1883,112 @@ void magneticFieldPolygonFilament(
 
 			int nThreads;
 			int nSourcePerThread;
-			if (numVertices-1 < numProcessors) {
-				nThreads = numVertices-1;
+			int nSourceRemainder;
+			if (numSegments < numProcessors) {
+				nThreads = numSegments;
+
 				nSourcePerThread = 1;
+				nSourceRemainder = 0;
 			} else {
 				nThreads = numProcessors;
 
-				// It is better that many threads do more
-				// than one thread needs to do more.
-				nSourcePerThread = (int) ceil( (numVertices-1.0) / nThreads);
+				nSourcePerThread = numSegments / nThreads;
+				nSourceRemainder = numSegments % nThreads;
 			}
+			
+			int idxEvalStart   = 0;
+			int idxEvalEnd     = numEvalPos;
 
-			double *magneticFieldContributions = (double *) malloc(nThreads * 3 * numEvalPos * sizeof(double));
+			double *magneticFieldContributions = (double *) malloc(nThreads * numEvalPos * 3 * sizeof(double));
 			if (magneticFieldContributions == NULL) {
 				printf("failed to allocate temporary array for magnetic field contributions\n");
 				return;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart =      idxThread    * nSourcePerThread;
-				idxSourceEnd   = min((idxThread+1) * nSourcePerThread, numVertices-1);
-				idxEvalStart   = 0;
-				idxEvalEnd     = numEvalPos;
+				
+				int idxSourceStart =  idxThread      * nSourcePerThread;
+				int idxSourceEnd   = (idxThread + 1) * nSourcePerThread;
+				if (idxThread < nSourceRemainder) {
+					idxSourceStart += idxThread;
+					idxSourceEnd   += idxThread + 1;
+				} else {
+					idxSourceStart += nSourceRemainder;
+					idxSourceEnd   += nSourceRemainder;
+				}
 
 				kernelMagneticFieldPolygonFilament(
 						vertices, current,
 						evalPos,
-						magneticFieldContributions + idxThread * 3 * numEvalPos,
+						&(magneticFieldContributions[idxThread * numEvalPos * 3]),
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
 
 			// sum up contributions from source chunks
 			if (useCompensatedSummation) {
-				double *sumX = (double *) malloc(3 * sizeof(double));
-				double *sumY = (double *) malloc(3 * sizeof(double));
-				double *sumZ = (double *) malloc(3 * sizeof(double));
 				for (int i=0; i<numEvalPos; ++i) {
-					memset(sumX, 0, 3 * sizeof(*sumX));
-					memset(sumY, 0, 3 * sizeof(*sumY));
-					memset(sumZ, 0, 3 * sizeof(*sumZ));
-					// TODO: bad memory access pattern here --> potential bottleneck !!!
+					double sumX[3] = { 0.0, 0.0, 0.0 };
+					double sumY[3] = { 0.0, 0.0, 0.0 };
+					double sumZ[3] = { 0.0, 0.0, 0.0 };
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						// TODO: bad memory access pattern here --> potential bottleneck !!!
+						compAdd(magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 0], sumX);
+						compAdd(magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 1], sumY);
+						compAdd(magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 2], sumZ);
 					}
-					magneticField[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
-					magneticField[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
-					magneticField[3 * i + 2] = sumZ[0] + sumZ[1] + sumZ[2];
+					magneticField[i * 3 + 0] += sumX[0] + sumX[1] + sumX[2];
+					magneticField[i * 3 + 1] += sumY[0] + sumY[1] + sumY[2];
+					magneticField[i * 3 + 2] += sumZ[0] + sumZ[1] + sumZ[2];
 				}
-				free(sumX);
-				free(sumY);
-				free(sumZ);
 			} else {
-				// TODO: memset(magneticField, 0)
 				for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-					for (int i=0; i<numEvalPos; ++i) {
-						magneticField[3 * i + 0] += magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0];
-						magneticField[3 * i + 1] += magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1];
-						magneticField[3 * i + 2] += magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2];
+					for (int i = 0; i < numEvalPos; ++i) {
+						magneticField[i * 3 + 0] += magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 0];
+						magneticField[i * 3 + 1] += magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 1];
+						magneticField[i * 3 + 2] += magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 2];
 					}
 				}
 			}
 
 			free(magneticFieldContributions);
-		} else { // nEval > nSource
-			// parallelize over nEval
+		} else { // numEvalPos > numSegments
+			// parallelize over numEvalPos
 
 			int nThreads;
+			int idxSourceStart = 0;
+			int idxSourceEnd   = numSegments;
 			int nEvalPerThread;
+			int nEvalRemainder;
 			if (numEvalPos < numProcessors) {
 				nThreads = numEvalPos;
+
 				nEvalPerThread = 1;
+				nEvalRemainder = 0;
 			} else {
 				nThreads = numProcessors;
-				nEvalPerThread = (int) ceil( ((double) numEvalPos) / nThreads );
+
+				nEvalPerThread = numEvalPos / nThreads;
+				nEvalRemainder = numEvalPos % nThreads;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart = 0;
-				idxSourceEnd   = numVertices-1;
-				idxEvalStart   =      idxThread    * nEvalPerThread;
-				idxEvalEnd     = min((idxThread+1) * nEvalPerThread, numEvalPos);
+				
+				int idxEvalStart =  idxThread      * nEvalPerThread;
+				int idxEvalEnd   = (idxThread + 1) * nEvalPerThread;
+				if (idxThread < nEvalRemainder) {
+					idxEvalStart += idxThread;
+					idxEvalEnd   += idxThread + 1;
+				} else {
+					idxEvalStart += nEvalRemainder;
+					idxEvalEnd   += nEvalRemainder;
+				}
 
 				kernelMagneticFieldPolygonFilament(
 						vertices, current,
@@ -1946,7 +1997,7 @@ void magneticFieldPolygonFilament(
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
-		} // parallelize over nSource or nEval
+		} // parallelize over numSegments or numEvalPos
 	} // parallelization
 }
 
@@ -1955,10 +2006,12 @@ void magneticFieldPolygonFilament(
  * Compute the magnetic field of a polygon filament
  * at a number of evaluation locations.
  *
+ * @param numVertices number of vertices to obtain from vertexSupplier
  * @param void (*vertexSupplier)(int i, double *point): callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
  * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; in T
+ * @param numEvalPos number of evaluation locations
+ * @param evalPos [numEvalPos][3: x, y, z] evaluation locations; in m
+ * @param magneticField [numEvalPos][3: x, y, z] target array for magnetic field at evaluation locations; in T
  * @param numProcessors number of processors to use for parallelization
  * @param useCompensatedSummation if true, use Kahan-Babuska compensated summation to compute the superposition
  *                                of the contributions from the polygon vertices; otherwise, use standard += summation
@@ -1978,20 +2031,22 @@ void magneticFieldPolygonFilament(
 		return;
 	}
 
+	// number of straight wire segments
+	int numSegments = numVertices - 1;
+
 	if (numProcessors < 1) {
 		printf("need at least 1 processor, but only got %d\n", numProcessors);
 		return;
 	}
 
 	if (current == 0.0) {
-		// TODO: memset(0, magneticField)
 		return;
 	}
 
 	if (numProcessors == 1) {
 		// single-threaded call
 		int idxSourceStart = 0;
-		int idxSourceEnd   = numVertices-1;
+		int idxSourceEnd   = numSegments;
 		int idxEvalStart   = 0;
 		int idxEvalEnd     = numEvalPos;
 		kernelMagneticFieldPolygonFilament(
@@ -2003,8 +2058,8 @@ void magneticFieldPolygonFilament(
 	} else {
 		// use multithreading
 
-		if (numVertices-1 > numEvalPos) {
-			// parallelize over nSource-1
+		if (numSegments > numEvalPos) {
+			// parallelize over numSegments
 
 			// Note that each thread needs its own copy of the magneticField array,
 			// so this approach might need quite some memory in case the number of
@@ -2012,99 +2067,112 @@ void magneticFieldPolygonFilament(
 
 			int nThreads;
 			int nSourcePerThread;
-			if (numVertices-1 < numProcessors) {
-				nThreads = numVertices-1;
+			int nSourceRemainder;
+			if (numSegments < numProcessors) {
+				nThreads = numSegments;
+
 				nSourcePerThread = 1;
+				nSourceRemainder = 0;
 			} else {
 				nThreads = numProcessors;
 
-				// It is better that many threads do more
-				// than one thread needs to do more.
-				nSourcePerThread = (int) ceil( (numVertices-1.0) / nThreads);
+				nSourcePerThread = numSegments / nThreads;
+				nSourceRemainder = numSegments % nThreads;
 			}
+			
+			int idxEvalStart   = 0;
+			int idxEvalEnd     = numEvalPos;
 
-			double *magneticFieldContributions = (double *) malloc(nThreads * 3 * numEvalPos * sizeof(double));
+			double *magneticFieldContributions = (double *) malloc(nThreads * numEvalPos * 3 * sizeof(double));
 			if (magneticFieldContributions == NULL) {
 				printf("failed to allocate temporary array for magnetic field contributions\n");
 				return;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart =      idxThread    * nSourcePerThread;
-				idxSourceEnd   = min((idxThread+1) * nSourcePerThread, numVertices-1);
-				idxEvalStart   = 0;
-				idxEvalEnd     = numEvalPos;
+				
+				int idxSourceStart =  idxThread      * nSourcePerThread;
+				int idxSourceEnd   = (idxThread + 1) * nSourcePerThread;
+				if (idxThread < nSourceRemainder) {
+					idxSourceStart += idxThread;
+					idxSourceEnd   += idxThread + 1;
+				} else {
+					idxSourceStart += nSourceRemainder;
+					idxSourceEnd   += nSourceRemainder;
+				}
 
 				kernelMagneticFieldPolygonFilament(
 						vertexSupplier, current,
 						evalPos,
-						magneticFieldContributions + idxThread * 3 * numEvalPos,
+						&(magneticFieldContributions[idxThread * numEvalPos * 3]),
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
 
 			// sum up contributions from source chunks
 			if (useCompensatedSummation) {
-				double *sumX = (double *) malloc(3 * sizeof(double));
-				double *sumY = (double *) malloc(3 * sizeof(double));
-				double *sumZ = (double *) malloc(3 * sizeof(double));
-				for (int i=0; i<numEvalPos; ++i) {
-					memset(sumX, 0, 3 * sizeof(*sumX));
-					memset(sumY, 0, 3 * sizeof(*sumY));
-					memset(sumZ, 0, 3 * sizeof(*sumZ));
-					// TODO: bad memory access pattern here --> potential bottleneck !!!
+				for (int i = 0; i < numEvalPos; ++i) {
+					double sumX[3] = { 0.0, 0.0, 0.0 };
+					double sumY[3] = { 0.0, 0.0, 0.0 };
+					double sumZ[3] = { 0.0, 0.0, 0.0 };
 					for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 0], sumX);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 1], sumY);
-						compAdd(magneticFieldContributions[idxThread * 3 * numEvalPos + 3 * i + 2], sumZ);
+						// TODO: bad memory access pattern here --> potential bottleneck !!!
+						compAdd(magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 0], sumX);
+						compAdd(magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 1], sumY);
+						compAdd(magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 2], sumZ);
 					}
-					magneticField[3 * i + 0] = sumX[0] + sumX[1] + sumX[2];
-					magneticField[3 * i + 1] = sumY[0] + sumY[1] + sumY[2];
-					magneticField[3 * i + 2] = sumZ[0] + sumZ[1] + sumZ[2];
+					magneticField[i * 3 + 0] += sumX[0] + sumX[1] + sumX[2];
+					magneticField[i * 3 + 1] += sumY[0] + sumY[1] + sumY[2];
+					magneticField[i * 3 + 2] += sumZ[0] + sumZ[1] + sumZ[2];
 				}
-				free(sumX);
-				free(sumY);
-				free(sumZ);
 			} else {
-				// TODO: memset(magneticField, 0)
 				for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-					for (int i=0; i<numEvalPos; ++i) {
-						magneticField[3 * i + 0] += magneticFieldContributions[3 * (numEvalPos * idxThread + i) + 0];
-						magneticField[3 * i + 1] += magneticFieldContributions[3 * (numEvalPos * idxThread + i) + 1];
-						magneticField[3 * i + 2] += magneticFieldContributions[3 * (numEvalPos * idxThread + i) + 2];
+					for (int i = 0; i < numEvalPos; ++i) {
+						magneticField[i * 3 + 0] += magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 0];
+						magneticField[i * 3 + 1] += magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 1];
+						magneticField[i * 3 + 2] += magneticFieldContributions[(idxThread * numEvalPos + i) * 3 + 2];
 					}
 				}
 			}
 
 			free(magneticFieldContributions);
-		} else { // nEval > nSource
-			// parallelize over nEval
+		} else { // numEvalPos > numSegments
+			// parallelize over numEvalPos
 
 			int nThreads;
+			int idxSourceStart = 0;
+			int idxSourceEnd   = numSegments;
 			int nEvalPerThread;
+			int nEvalRemainder;
 			if (numEvalPos < numProcessors) {
 				nThreads = numEvalPos;
+
 				nEvalPerThread = 1;
+				nEvalRemainder = 0;
 			} else {
 				nThreads = numProcessors;
-				nEvalPerThread = (int) ceil( ((double) numEvalPos) / nThreads );
+
+				nEvalPerThread = numEvalPos / nThreads;
+				nEvalRemainder = numEvalPos % nThreads;
 			}
 
-			// parallelized evaluation
-			int idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd;
 #ifdef _OPENMP
-#pragma omp parallel for private(idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd)
+#pragma omp parallel for
 #endif // _OPENMP
 			for (int idxThread = 0; idxThread < nThreads; ++idxThread) {
-				idxSourceStart = 0;
-				idxSourceEnd   = numVertices-1;
-				idxEvalStart   =      idxThread    * nEvalPerThread;
-				idxEvalEnd     = min((idxThread+1) * nEvalPerThread, numEvalPos);
+				
+				int idxEvalStart =  idxThread      * nEvalPerThread;
+				int idxEvalEnd   = (idxThread + 1) * nEvalPerThread;
+				if (idxThread < nEvalRemainder) {
+					idxEvalStart += idxThread;
+					idxEvalEnd   += idxThread + 1;
+				} else {
+					idxEvalStart += nEvalRemainder;
+					idxEvalEnd   += nEvalRemainder;
+				}
 
 				kernelMagneticFieldPolygonFilament(
 						vertexSupplier, current,
@@ -2113,260 +2181,8 @@ void magneticFieldPolygonFilament(
 						idxSourceStart, idxSourceEnd, idxEvalStart, idxEvalEnd,
 						useCompensatedSummation);
 			}
-		} // parallelize over nSource or nEval
+		} // parallelize over numSegments or numEvalPos
 	} // parallelization
-}
-
-// --------------------------------------------------
-
-/**
- * Compute the magnetic vector potential of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- *
- * @param vertices [3: x, y, z][numVertices] points along polygon; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
- * @param numProcessors number of processors to use for parallelization
- */
-void vectorPotentialPolygonFilament(
-		int numVertices,
-		double *vertices,
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *vectorPotential,
-		int numProcessors) {
-
-	bool useCompensatedSummation = true;
-	vectorPotentialPolygonFilament(
-			numVertices, vertices, current,
-			numEvalPos, evalPos,
-			vectorPotential,
-			numProcessors,
-			useCompensatedSummation);
-}
-
-/**
- * Compute the magnetic vector potential of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- *
- * @param void (*vertexSupplier)(int i, double *point): callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
- * @param numProcessors number of processors to use for parallelization
- */
-void vectorPotentialPolygonFilament(
-		int numVertices,
-		void (*vertexSupplier)(int i, double *point),
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *vectorPotential,
-		int numProcessors) {
-
-	bool useCompensatedSummation = true;
-	vectorPotentialPolygonFilament(
-			numVertices, vertexSupplier, current,
-			numEvalPos, evalPos,
-			vectorPotential,
-			numProcessors,
-			useCompensatedSummation);
-}
-
-/**
- * Compute the magnetic field of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- *
- * @param vertices [3: x, y, z][numVertices] points along polygon; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
- * @param numProcessors number of processors to use for parallelization
- */
-void magneticFieldPolygonFilament(
-		int numVertices,
-		double *vertices,
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *magneticField,
-		int numProcessors) {
-
-	bool useCompensatedSummation = true;
-	magneticFieldPolygonFilament(
-			numVertices, vertices, current,
-			numEvalPos, evalPos,
-			magneticField,
-			numProcessors,
-			useCompensatedSummation);
-}
-
-/**
- * Compute the magnetic field of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- *
- * @param void (*vertexSupplier)(int i, double *point): callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
- * @param numProcessors number of processors to use for parallelization
- */
-void magneticFieldPolygonFilament(
-		int numVertices,
-		void (*vertexSupplier)(int i, double *point),
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *magneticField,
-		int numProcessors) {
-
-	bool useCompensatedSummation = true;
-	magneticFieldPolygonFilament(
-			numVertices, vertexSupplier, current,
-			numEvalPos, evalPos,
-			magneticField,
-			numProcessors,
-			useCompensatedSummation);
-}
-
-// --------------------------------------------------
-
-/**
- * Compute the magnetic vector potential of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- * The computation is parallelized over all available processors.
- *
- * @param vertices [3: x, y, z][numVertices] points along polygon; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
- */
-void vectorPotentialPolygonFilament(
-		int numVertices,
-		double *vertices,
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *vectorPotential) {
-
-#ifdef _OPENMP
-	int numProcessors = omp_get_max_threads();
-#else
-	int numProcessors = 1;
-#endif
-	vectorPotentialPolygonFilament(
-			numVertices, vertices, current,
-			numEvalPos, evalPos,
-			vectorPotential,
-			numProcessors);
-}
-
-/**
- * Compute the magnetic vector potential of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- * The computation is parallelized over all available processors.
- *
- * @param void (*vertexSupplier)(int i, double *point): callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param vectorPotential [3: x, y, z][numEvalPos] target array for magnetic vector potential at evaluation locations; in Tm
- */
-void vectorPotentialPolygonFilament(
-		int numVertices,
-		void (*vertexSupplier)(int i, double *point),
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *vectorPotential) {
-
-#ifdef _OPENMP
-	int numProcessors = omp_get_max_threads();
-#else
-	int numProcessors = 1;
-#endif
-	vectorPotentialPolygonFilament(
-			numVertices, vertexSupplier, current,
-			numEvalPos, evalPos,
-			vectorPotential,
-			numProcessors);
-}
-
-/**
- * Compute the magnetic field of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- * The computation is parallelized over all available processors.
- *
- * @param vertices [3: x, y, z][numVertices] points along polygon; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
- */
-void magneticFieldPolygonFilament(
-		int numVertices,
-		double *vertices,
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *magneticField) {
-
-#ifdef _OPENMP
-	int numProcessors = omp_get_max_threads();
-#else
-	int numProcessors = 1;
-#endif
-	magneticFieldPolygonFilament(
-			numVertices, vertices, current,
-			numEvalPos, evalPos,
-			magneticField,
-			numProcessors);
-}
-
-/**
- * Compute the magnetic field of a polygon filament
- * at a number of evaluation locations.
- * Kahan-Babuska compensated summation is used to compute the superposition
- * of the contributions from the polygon vertices.
- * The computation is parallelized over all available processors.
- *
- * @param void (*vertexSupplier)(int i, double *point): callback to put i-th current carrier polygon vertex into point as [3: x, y, z]; in m
- * @param current current along polygon; in A
- * @param evalPos [3: x, y, z][numEvalPos] evaluation locations; in m
- * @param magneticField [3: x, y, z][numEvalPos] target array for magnetic field at evaluation locations; inT
- */
-void magneticFieldPolygonFilament(
-		int numVertices,
-		void (*vertexSupplier)(int i, double *point),
-		double current,
-		int numEvalPos,
-		double *evalPos,
-		double *magneticField) {
-
-#ifdef _OPENMP
-	int numProcessors = omp_get_max_threads();
-#else
-	int numProcessors = 1;
-#endif
-	magneticFieldPolygonFilament(
-			numVertices, vertexSupplier, current,
-			numEvalPos, evalPos,
-			magneticField,
-			numProcessors);
 }
 
 } // namespace abscab
