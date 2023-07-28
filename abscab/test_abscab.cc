@@ -484,7 +484,7 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentVertexSupplier) {
 
 	double tolerance = 1.0e-15;
 
-	int numVertices = 4;
+	constexpr int numVertices = 4;
 	void (*vertexSupplier)(int, double *) = [](int i, double *point) {
 		switch (i) {
 		case 0:
@@ -500,7 +500,9 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentVertexSupplier) {
 			point[0] = 7.0; point[1] = 8.0; point[2] = 9.0;
 			break;
 		default:
-
+			std::stringstream msg;
+			msg << "vertexSupplier only provides " << numVertices << " vertices";
+			FAIL() << msg.str();
 			break;
 		}
 	};
