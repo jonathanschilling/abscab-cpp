@@ -1,6 +1,5 @@
 
-#include "abscab-cpp/abscab/abscab.hh"
-
+#include "abscab.hh"
 
 #include <float.h>
 #include <limits.h>

@@ -1,7 +1,8 @@
 
 #include <gtest/gtest.h>
 
-#include "abscab-cpp/abscab/abscab.hh"
+#include "abscab.hh"
+
 #include "abscab-cpp/test_util/test_util.hh"
 
 namespace abscab {

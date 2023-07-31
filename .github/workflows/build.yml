@@ -13,6 +13,10 @@ jobs:
       - name: fake workspace
         run: cp abscab/abscab-cpp/.github/_WORKSPACE_TEMPLATE abscab/WORKSPACE
  
+      - name: build DemoAbscab
+        run:
+          pushd abscab && bazel build //abscab-cpp/abscab:DemoAbscab ; popd
+
       - name: test abscab
         run: 
           pushd abscab && bazel test //abscab-cpp/abscab:TestAbscab --test_output=all ; popd

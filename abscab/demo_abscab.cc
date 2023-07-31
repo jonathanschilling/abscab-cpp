@@ -1,4 +1,5 @@
 
+
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -8,8 +9,8 @@
 #define omp_get_max_threads() 1
 #endif // _OPENMP
 
-#include "util.h"
-#include "abscab.h"
+#include "abscab-cpp/test_util/test_util.hh"
+#include "abscab.hh"
 
 double omega = 0.0;
 
@@ -53,7 +54,7 @@ void demoMcGreivy() {
 	};
 
 	double magneticField[3];
-	magneticFieldCircularFilament(center, normal, radius, current, 1, evalPos, magneticField);
+	abscab::magneticFieldCircularFilament(center, normal, radius, current, 1, evalPos, magneticField);
 	double bZRef = magneticField[2];
 	printf("ref B_z = %.3e\n", bZRef);
 
@@ -91,13 +92,13 @@ void demoMcGreivy() {
 		omega = 2.0 * M_PI / (numPhi-1);
 
 		memset(magneticField, 0, 3*sizeof(double));
-		magneticFieldPolygonFilament(numPhi, vertexSupplierStd, current, 1, evalPos, magneticField, numProcessors, useCompensatedSummation);
+		abscab::magneticFieldPolygonFilament(numPhi, vertexSupplierStd, current, 1, evalPos, magneticField, numProcessors, useCompensatedSummation);
 		double bZStd = magneticField[2];
 
 //			double[][] verticesStd = polygonCircleAround0(radius, numPhi);
 //			double bZStd = ABSCAB.magneticFieldPolygonFilament(verticesStd, current, evalPos, numProcessors, useCompensatedSummation)[2][0];
 
-		allBzStdErr[i] = errorMetric(bZRef, bZStd);
+		allBzStdErr[i] = abscab::errorMetric(bZRef, bZStd);
 		printf("ABSCAB B_z = %.3e (err %g)\n", bZStd, allBzStdErr[i]);
 
 		// McGreivy radius correction
@@ -110,13 +111,13 @@ void demoMcGreivy() {
 		rCorr = radius * (1.0 + dPhi*dPhi/ 12);
 
 		memset(magneticField, 0, 3*sizeof(double));
-		magneticFieldPolygonFilament(numPhi, vertexSupplierMcG, current, 1, evalPos, magneticField, numProcessors, useCompensatedSummation);
+		abscab::magneticFieldPolygonFilament(numPhi, vertexSupplierMcG, current, 1, evalPos, magneticField, numProcessors, useCompensatedSummation);
 		double bZMcG = magneticField[2];
 
 //			double[][] verticesMcG = polygonCircleAround0(rCorr, numPhi);
 //			double bZMcG = ABSCAB.magneticFieldPolygonFilament(verticesMcG, current, evalPos, numProcessors, useCompensatedSummation)[2][0];
 
-		allBzMcGErr[i] = errorMetric(bZRef, bZMcG);
+		allBzMcGErr[i] = abscab::errorMetric(bZRef, bZMcG);
 		printf("McGrvy B_z = %.3e (err %g)\n", bZMcG, allBzMcGErr[i]);
 
 		resultTable[3 * i + 0] = numPhi;
@@ -125,9 +126,9 @@ void demoMcGreivy() {
 	}
 
 	if (useCompensatedSummation) {
-		dumpToFile(3, numCases, resultTable, "convergenceMcGreivy_CompensatedSummation.dat");
+		abscab::dumpToFile(3, numCases, resultTable, "convergenceMcGreivy_CompensatedSummation.dat");
 	} else {
-		dumpToFile(3, numCases, resultTable, "convergenceMcGreivy_StandardSummation.dat");
+		abscab::dumpToFile(3, numCases, resultTable, "convergenceMcGreivy_StandardSummation.dat");
 	}
 
 	free(allBzStdErr);
