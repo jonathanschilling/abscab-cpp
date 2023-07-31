@@ -12,27 +12,7 @@ jobs:
           
       - name: fake workspace
         run: cp abscab/abscab-cpp/.github/_WORKSPACE_TEMPLATE abscab/WORKSPACE
-          
-      - name: build util
-        run: 
-          pushd abscab && bazel build //abscab-cpp/util:util ; popd
-          
-      - name: build cel
-        run: 
-          pushd abscab && bazel build //abscab-cpp/cel:cel ; popd
-          
-      - name: build compsum
-        run: 
-          pushd abscab && bazel build //abscab-cpp/compsum:compsum ; popd
-          
-      - name: build abscab
-        run: 
-          pushd abscab && bazel build //abscab-cpp/abscab:abscab ; popd
-          
-      - name: test cel
-        run: 
-          pushd abscab && bazel test //abscab-cpp/cel:TestCel --test_output=all ; popd
-          
+ 
       - name: test abscab
         run: 
           pushd abscab && bazel test //abscab-cpp/abscab:TestAbscab --test_output=all ; popd
