@@ -4,11 +4,7 @@ cc_library(
     name = "abscab",
     srcs = ["abscab.cc"],
     hdrs = ["abscab.hh"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-    	"//abscab-cpp/cel:cel",
-    	"//abscab-cpp/compsum:compsum",
-    ],
+    visibility = ["//visibility:public"],
     copts = [
     	"-O3",
     	"-march=native",
@@ -51,7 +47,7 @@ cc_test(
     data = [":test_data"],
     deps = [
     	":abscab",
-    	"//abscab-cpp/util:util",
+    	"//abscab-cpp/test_util:test_util",
         "@com_google_googletest//:gtest_main",
         "@bazel_tools//tools/cpp/runfiles",
     ],
@@ -65,3 +61,22 @@ cc_test(
     ],
 )
 
+cc_binary(
+	name = "DemoAbscab",
+	srcs = [
+		"demo_abscab.cc"
+	],
+	visibility = ["//visibility:private"],
+	deps = [
+    	":abscab",
+    	"//abscab-cpp/test_util:test_util",
+    ],
+	copts = [
+    	"-O3",
+    	"-march=native",
+    	"-fopenmp"
+    ],
+    linkopts = [
+        "-lgomp",
+    ],
+)

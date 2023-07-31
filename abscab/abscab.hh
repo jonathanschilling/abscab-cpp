@@ -1,31 +1,31 @@
 #ifndef ABSCAB_H
 #define ABSCAB_H
 
-#include "stdio.h"
-
-// for memset()
-#include <string.h>
-
 #ifdef _OPENMP
 #include <omp.h>
 #endif // _OPENMP
-
-#include "abscab-cpp/cel/cel.hh"
-#include "abscab-cpp/compsum/compsum.hh"
 
 namespace abscab {
 
 /** vacuum magnetic permeability in Vs/Am (CODATA-2018) */
 const double MU_0 = 1.25663706212e-6;
 
-/** vacuum magnetic permeability, divided by pi */
-const double MU_0_BY_PI = MU_0 / M_PI;
-
-/** vacuum magnetic permeability, divided by 2 pi */
-const double MU_0_BY_2_PI = MU_0 / (2.0 * M_PI);
-
-/** vacuum magnetic permeability, divided by 4 pi */
-const double MU_0_BY_4_PI = MU_0 / (4.0 * M_PI);
+/**
+ * Compute the complete elliptic integral introduced in
+ * "Numerical Calculation of Elliptic Integrals and Elliptic Functions. III"
+ * by R. Bulirsch in "Numerische Mathematik" 13, 305-315 (1969):
+ * cel(k_c, p, a, b) =
+ * \int_0^{\pi/2} \frac{a \cos^2{\varphi} + b \sin^2{\varphi}}
+ *                     {  \cos^2{\varphi} + p \sin^2{\varphi}}
+ *                \frac{\mathrm{d}\varphi}
+ *                     {\sqrt{\cos^2{\varphi} + k_c^2 \sin^2{\varphi}}}
+ * @param k_c parameter k_c of cel(); absolute value must not be 0
+ * @param p   parameter p of cel()
+ * @param a   parameter a of cel()
+ * @param b   parameter b of cel()
+ * @return the value of cel(k_c, p, a, b)
+ */
+double cel(double k_c, double p, double a, double b);
 
 /////// A_z of straight wire segment
 

@@ -1,13 +1,13 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
-    name = "compsum",
-    srcs = ["compsum.cc"],
-    hdrs = ["compsum.hh"],
+    name = "test_util",
+    srcs = ["test_util.cc"],
+    hdrs = ["test_util.hh"],
     visibility = ["//:__subpackages__"],
     copts = [
     	"-O3",
     	"-march=native",
-    	"-fopenmp",
+    	"-fopenmp"
     ],
 )

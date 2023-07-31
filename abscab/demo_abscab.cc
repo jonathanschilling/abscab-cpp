@@ -149,7 +149,6 @@ void demoMcGreivy() {
 
 int main(int argc, char **argv) {
 
-
 	demoMcGreivy();
 
 	return 0;
