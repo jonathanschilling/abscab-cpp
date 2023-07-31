@@ -421,7 +421,7 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentArrays) {
 
 	double tolerance = 1.0e-15;
 
-	int numVertices = 4;
+	constexpr int numVertices = 4;
 	double vertices[numVertices * 3] = {
 		0.0, 0.0, 0.0,
 		1.0, 2.0, 3.0,
@@ -435,6 +435,8 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentArrays) {
 	for (int numProcessors = 1; numProcessors < 3; ++numProcessors) {
 		for (int compensatedSummationCase = 0; compensatedSummationCase < 2; ++compensatedSummationCase) {
 			bool useCompensatedSummation = (compensatedSummationCase == 0);
+			
+			// trigger both cases of numEvalPos < numSegments and numEvalPos > numSegments
 			for (int numEvalPos = 1; numEvalPos < 6; numEvalPos += 4) {
 
 				int numBytes = numEvalPos * 3 * sizeof(double);
@@ -449,6 +451,7 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentArrays) {
 					evalPos[idxEvalPos * 3 + 2] = -(idxEvalPos + 1);
 				}
 
+				// vector potential
 				double *vectorPotential_ref = (double *) malloc(numBytes);
 				if (vectorPotential_ref == NULL) {
 					FAIL() << "could not allocate vectorPotential_ref";
@@ -474,6 +477,34 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentArrays) {
 
 				free(vectorPotential);
 				free(vectorPotential_ref);
+
+				// magnetic field
+				double *magneticField_ref = (double *) malloc(numBytes);
+				if (magneticField_ref == NULL) {
+					FAIL() << "could not allocate magneticField_ref";
+				}
+				memset(magneticField_ref, 0, numBytes);
+
+				magneticFieldPolygonFilament(numVertices, vertices, current_1 + current_2, numEvalPos, evalPos, magneticField_ref, numProcessors, useCompensatedSummation);
+
+				double *magneticField = (double *) malloc(numBytes);
+				if (magneticField == NULL) {
+					FAIL() << "could not allocate magneticField";
+				}
+				memset(magneticField, 0, numBytes);
+
+				magneticFieldPolygonFilament(numVertices, vertices, current_1, numEvalPos, evalPos, magneticField, numProcessors, useCompensatedSummation);
+				magneticFieldPolygonFilament(numVertices, vertices, current_2, numEvalPos, evalPos, magneticField, numProcessors, useCompensatedSummation);
+
+				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
+					EXPECT_EQ(assertRelAbsEquals(magneticField_ref[idxEvalPos * 3 + 0], magneticField[idxEvalPos * 3 + 0], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(magneticField_ref[idxEvalPos * 3 + 1], magneticField[idxEvalPos * 3 + 1], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(magneticField_ref[idxEvalPos * 3 + 2], magneticField[idxEvalPos * 3 + 2], tolerance), 0);
+				}
+
+				free(magneticField);
+				free(magneticField_ref);
+
 				free(evalPos);
 			}
 		}
@@ -513,6 +544,8 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentVertexSupplier) {
 	for (int numProcessors = 1; numProcessors < 3; ++numProcessors) {
 		for (int compensatedSummationCase = 0; compensatedSummationCase < 2; ++compensatedSummationCase) {
 			bool useCompensatedSummation = (compensatedSummationCase == 0);
+
+			// trigger both cases of numEvalPos < numSegments and numEvalPos > numSegments
 			for (int numEvalPos = 1; numEvalPos < 6; numEvalPos += 4) {
 
 				int numBytes = numEvalPos * 3 * sizeof(double);
@@ -527,6 +560,7 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentVertexSupplier) {
 					evalPos[idxEvalPos * 3 + 2] = -(idxEvalPos + 1);
 				}
 
+				// vector potential
 				double *vectorPotential_ref = (double *) malloc(numBytes);
 				if (vectorPotential_ref == NULL) {
 					FAIL() << "could not allocate vectorPotential_ref";
@@ -552,6 +586,34 @@ TEST(TestAbscab, CheckPreseverancePolygonFilamentVertexSupplier) {
 
 				free(vectorPotential);
 				free(vectorPotential_ref);
+
+				// magnetic field
+				double *magneticField_ref = (double *) malloc(numBytes);
+				if (magneticField_ref == NULL) {
+					FAIL() << "could not allocate magneticField_ref";
+				}
+				memset(magneticField_ref, 0, numBytes);
+
+				magneticFieldPolygonFilament(numVertices, vertexSupplier, current_1 + current_2, numEvalPos, evalPos, magneticField_ref, numProcessors, useCompensatedSummation);
+
+				double *magneticField = (double *) malloc(numBytes);
+				if (magneticField == NULL) {
+					FAIL() << "could not allocate magneticField";
+				}
+				memset(magneticField, 0, numBytes);
+
+				magneticFieldPolygonFilament(numVertices, vertexSupplier, current_1, numEvalPos, evalPos, magneticField, numProcessors, useCompensatedSummation);
+				magneticFieldPolygonFilament(numVertices, vertexSupplier, current_2, numEvalPos, evalPos, magneticField, numProcessors, useCompensatedSummation);
+
+				for (int idxEvalPos = 0; idxEvalPos < numEvalPos; ++idxEvalPos) {
+					EXPECT_EQ(assertRelAbsEquals(magneticField_ref[idxEvalPos * 3 + 0], magneticField[idxEvalPos * 3 + 0], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(magneticField_ref[idxEvalPos * 3 + 1], magneticField[idxEvalPos * 3 + 1], tolerance), 0);
+					EXPECT_EQ(assertRelAbsEquals(magneticField_ref[idxEvalPos * 3 + 2], magneticField[idxEvalPos * 3 + 2], tolerance), 0);
+				}
+
+				free(magneticField);
+				free(magneticField_ref);
+
 				free(evalPos);
 			}
 		}
