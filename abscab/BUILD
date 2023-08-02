@@ -5,11 +5,6 @@ cc_library(
     srcs = ["abscab.cc"],
     hdrs = ["abscab.hh"],
     visibility = ["//visibility:public"],
-    copts = [
-    	"-O3",
-    	"-march=native",
-    	"-fopenmp",
-    ],
 )
 
 filegroup(
@@ -71,7 +66,7 @@ cc_binary(
     	":abscab",
     	"//abscab-cpp/test_util:test_util",
     ],
-	copts = [
+    copts = [
     	"-O3",
     	"-march=native",
     	"-fopenmp"
